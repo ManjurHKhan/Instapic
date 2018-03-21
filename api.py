@@ -1,7 +1,6 @@
 from flask import Flask
 from flask import render_template,request, redirect, jsonify
 from http import cookies
-from dbconfig import config
 
 app = Flask(__name__)
 
