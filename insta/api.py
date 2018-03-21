@@ -2,7 +2,7 @@ from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify
 from http import cookies
 
-mod = Flask(__name__)
+mod = Blueprint("api", __name__)
 
 @mod.route("/")
 def hello():
@@ -25,7 +25,3 @@ def logout():
 @mod.route("/verify", methods=["POST"])
 def verify():
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
-
-#if __name__ == "__main__":
-#    mod.run(host='0.0.0.0')
-        
