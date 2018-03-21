@@ -1,8 +1,8 @@
 from flask import Blueprint
 
-mod = Blueprint("site", ___name__)
+mod = Blueprint("site", __name__)
 
 @mod.route("/")
-def ():
+def main_front():
     return "<h1 style='color:blue'>This is the main site. </h1>"
         
