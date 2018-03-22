@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify
 from http import cookies
-from dbconfig import config
+from insta.dbconfig import config
 
 mod = Blueprint("api", __name__)
 
