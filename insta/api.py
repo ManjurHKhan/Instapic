@@ -7,9 +7,7 @@ mod = Blueprint("api", __name__)
 
 @mod.route("/")
 def hello():
-    #x = "<h1 style='color:blue'>Hello WOOP World!</h1>"
-    y = test_connect()
-    return y
+    return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
 def adduser():
@@ -28,22 +26,24 @@ def logout():
 def verify():
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
 
+
+@mod.route("/test_connection")
+def test_pg_bouncer():
+    y = test_connect()
+    return y
+
 def test_connect():
     """ Connect to the PostgreSQL database server """
     conn = None
     try:
         # read connection parameters
         params = config()
-        print(params)
         # connect to the PostgreSQL server
-        print('Connecting to the PostgreSQL database...')
         conn = psycopg2.connect(**params)
-
         # create a cursor
         cur = conn.cursor()
         
         # Check database version of postgresql
-        print('PostgreSQL database version:')
         cur.execute('SELECT version()')
         db_version = cur.fetchone()
         # display the PostgreSQL database server version
@@ -53,7 +53,6 @@ def test_connect():
         cur.close()
         conn.commit()
     except (Exception, psycopg2.DatabaseError) as error:
-        print ("something happened")
         print(params)
         print(error)
         return "TEST CONNECTION FAILED"
@@ -62,5 +61,5 @@ def test_connect():
             conn.close()
             print('Database connection closed.')
             return "CONNECTION NOT CLOSED..."
-        return "CONNECTION CLOSED"
+        return "Success - CONNECTION CLOSED"
  
