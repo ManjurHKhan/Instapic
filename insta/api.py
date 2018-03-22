@@ -7,8 +7,8 @@ mod = Blueprint("api", __name__)
 
 @mod.route("/")
 def hello():
-	#x = "<h1 style='color:blue'>Hello WOOP World!</h1>"
-	y = test_connect()
+    #x = "<h1 style='color:blue'>Hello WOOP World!</h1>"
+    y = test_connect()
     return y
 
 @mod.route("/adduser", methods=["POST"])
