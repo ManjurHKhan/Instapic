@@ -9,9 +9,7 @@ def test_connect():
         # read connection parameters
         params = config()
         # connect to the PostgreSQL server
-        logger.debug(params)
         conn = psycopg2.connect(**params)
-        logger.debug('conn:%s', conn)
         # create a cursor
         cur = conn.cursor()
         
