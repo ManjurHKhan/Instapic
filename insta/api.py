@@ -24,12 +24,12 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
-
-logger.debug('debug message')
-logger.info('info message')
-logger.warn('warn message')
-logger.error('error message')
-logger.critical('critical message')
+# Example loggers
+# logger.debug('debug message')
+# logger.info('info message')
+# logger.warn('warn message')
+# logger.error('error message')
+# logger.critical('critical message')
 ######################
 
 mod = Blueprint("api", __name__)
@@ -71,19 +71,18 @@ def adduser():
 
                         logger.debug('adduser: executed insertion of  %s, %s, %s, %s'%(username,password,email,salt))
                         pg_close()
-                        return jsonify({status:200, error:"Added user - unvalidated"})
+                        return jsonify(status=200, error="Added user - unvalidated")
                     else:
                         pg_close()
                         logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
-                        return jsonify({status:400, error:"Username or email has already been taken."})
+                        return jsonify(status=400, error="Username or email has already been taken.")
                    
                 else:
                     logger.debug('adduser: Connection failed.')
 
-                    return jsonify({status:500, error:"DB Connection failed"})
+                    return jsonify(status=500, error="DB Connection failed")
     logger.debug('adduser: bad json data given')
-
-    return jsonify({status:400, error:"No json data was posted"})
+    return jsonify(status=400, error="No json data was posted")
 
 @mod.route("/login", methods=["POST"])
 def login():
