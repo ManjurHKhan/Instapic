@@ -114,6 +114,8 @@ def test_pg_bouncer():
 
 def pg_connect():
     conn = None
+    logger.debug('pg_connect: Starting to try to connect')
+
     try:
         # read connection parameters
         params = config()
@@ -121,8 +123,12 @@ def pg_connect():
         conn = psycopg2.connect(**params)
         # create a cursor
         cur = conn.cursor()
+        logger.debug('pg_connect: Sreturning connection')
+
         return (conn,cur)
     except (Exception, psycopg2.DatabaseError) as error:
+        logger.error('pg_connect: %s', error)
+
         print(params)
         print(error)
         return None
