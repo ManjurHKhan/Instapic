@@ -2,16 +2,82 @@ from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify
 from http import cookies
 from insta.dbconfig import config
+import hashlib
+import logging
+
+######################
+### Set up Logging ###
+######################
+logger = logging.getLogger('instadata')
+logger.setLevel(logging.DEBUG)
+# create file handler which logs even debug messages
+fh = logging.FileHandler('log_api.log')
+fh.setLevel(logging.DEBUG)
+# create console handler with a higher log level
+ch = logging.StreamHandler()
+ch.setLevel(logging.ERROR)
+# create formatter and add it to the handlers
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+fh.setFormatter(formatter)
+# add the handlers to logger
+logger.addHandler(ch)
+logger.addHandler(fh)
+
+
+logger.debug('debug message')
+logger.info('info message')
+logger.warn('warn message')
+logger.error('error message')
+logger.critical('critical message')
+######################
 
 mod = Blueprint("api", __name__)
 
+SHA256_SALT_SIZE = 32
+VAL_KEY_SIZE=10
 @mod.route("/")
 def hello():
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
 def adduser():
-    return "<h1 style='color:blue'>Hello Blah World!</h1>"
+    if (request.headers.get('Content-Type') == 'application/json'):
+        data = request.get_json(silent=True)
+        if (data != None):
+            username = data["username"]
+            pwd = data["password"]
+            email = data["email"]
+            if (username != None && pwd != None && email != None):
+                #process request
+                pconn = pg_connect()
+                if (pconn != None):
+                    conn = pconn[0]
+                    cur = pconn[1]
+                    # validate if username or email has already been taken
+
+                    query = "SELECT * FROM USERS where username=%s or email=%s"%(username,email)
+                    cur.execute(query)
+                    res = cur.fetchone()
+                    if (res == None):
+                        query = "INSERT INTO USERS (username,password,email,salt) VALUES(%s,%s,%s,%s)";
+                        m = hashlib.sha256()
+                        psalt = os.urandom(SHA256_SALT_SIZE)
+                        val_key = os.urandom(VAL_KEY_SIZE)
+
+                        dk = hashlib.pbkdf2_hmac('sha256', pwd, psalt, 100000)
+                        salty = binascii.hexlify(dk)
+                        cur.execute(query%(username, pwd, email, psalt, val_key))
+                        pg_close()
+                        return jsonify({status:200, error:"Added user - unvalidated"})
+                    else:
+                        pg_close()
+                        return jsonify({status:400, error:"Username or email has already been taken."})
+                   
+                else:
+                    return jsonify({status:500, error:"DB Connection failed"})
+
+    return jsonify({status:400, error:"No json data was posted"})
 
 @mod.route("/login", methods=["POST"])
 def login():
@@ -31,6 +97,27 @@ def verify():
 def test_pg_bouncer():
     y = test_connect()
     return y
+
+
+def pg_connect():
+    conn = None
+    try:
+        # read connection parameters
+        params = config()
+        # connect to the PostgreSQL server
+        conn = psycopg2.connect(**params)
+        # create a cursor
+        cur = conn.cursor()
+        return (conn,cur)
+    except (Exception, psycopg2.DatabaseError) as error:
+        print(params)
+        print(error)
+        return None
+
+def close_connect(conn, curr):
+    cur.close()
+    conn.commit()
+    conn.close()
 
 def test_connect():
     """ Connect to the PostgreSQL database server """
