@@ -48,7 +48,7 @@ def adduser():
             username = data["username"]
             pwd = data["password"]
             email = data["email"]
-            if (username != None && pwd != None && email != None):
+            if (username != None and pwd != None and email != None):
                 #process request
                 pconn = pg_connect()
                 if (pconn != None):
@@ -68,14 +68,20 @@ def adduser():
                         dk = hashlib.pbkdf2_hmac('sha256', pwd, psalt, 100000)
                         salty = binascii.hexlify(dk)
                         cur.execute(query%(username, pwd, email, psalt, val_key))
+
+                        logger.debug('adduser: executed insertion of  %s, %s, %s, %s'%(username,password,email,salt))
                         pg_close()
                         return jsonify({status:200, error:"Added user - unvalidated"})
                     else:
                         pg_close()
+                        logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
                         return jsonify({status:400, error:"Username or email has already been taken."})
                    
                 else:
+                    logger.debug('adduser: Connection failed.')
+
                     return jsonify({status:500, error:"DB Connection failed"})
+    logger.debug('adduser: bad json data given')
 
     return jsonify({status:400, error:"No json data was posted"})
 
