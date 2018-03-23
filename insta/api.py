@@ -48,6 +48,8 @@ def adduser():
             username = data["username"]
             pwd = data["password"]
             email = data["email"]
+            logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
+
             if (username != None and pwd != None and email != None):
                 #process request
                 pconn = pg_connect()
@@ -60,6 +62,8 @@ def adduser():
                     cur.execute(query)
                     res = cur.fetchone()
                     if (res == None):
+                        logger.debug('adduser: Starting to insert things into the table')
+
                         query = "INSERT INTO USERS (username,password,email,salt) VALUES(%s,%s,%s,%s)";
                         m = hashlib.sha256()
                         psalt = os.urandom(SHA256_SALT_SIZE)
