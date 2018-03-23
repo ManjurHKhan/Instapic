@@ -53,7 +53,11 @@ def adduser():
             if (username != None and pwd != None and email != None):
                 #process request
                 pconn = pg_connect()
+                logger.debug('adduser: Doing Connection')
+
                 if (pconn != None):
+                    logger.debug('adduser: Yay connection')
+
                     conn = pconn[0]
                     cur = pconn[1]
                     # validate if username or email has already been taken
@@ -62,7 +66,7 @@ def adduser():
                     cur.execute(query)
                     res = cur.fetchone()
                     if (res == None):
-                        logger.debug('adduser: Starting to insert things into the table')
+                        logger.debug('adduser: Starting to insert things into the table with %s', res)
 
                         query = "INSERT INTO USERS (username,password,email,salt) VALUES(%s,%s,%s,%s)";
                         m = hashlib.sha256()
@@ -74,10 +78,10 @@ def adduser():
                         cur.execute(query%(username, pwd, email, psalt, val_key))
 
                         logger.debug('adduser: executed insertion of  %s, %s, %s, %s'%(username,password,email,salt))
-                        pg_close()
+                        close_connect(conn,cur)
                         return jsonify(status=200, error="Added user - unvalidated")
                     else:
-                        pg_close()
+                        close_connect(conn,cur)
                         logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
                         return jsonify(status=400, error="Username or email has already been taken.")
                    
