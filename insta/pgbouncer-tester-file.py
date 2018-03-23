@@ -1,4 +1,6 @@
 from dbconfig import config
+import psycopg2
+
 
 def test_connect():
     """ Connect to the PostgreSQL database server """

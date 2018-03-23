@@ -2,6 +2,7 @@ from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify
 from http import cookies
 from insta.dbconfig import config
+import psycopg2
 import hashlib
 import logging
 
