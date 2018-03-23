@@ -120,6 +120,8 @@ def pg_connect():
         # read connection parameters
         params = config()
         # connect to the PostgreSQL server
+        logger.debug('pg_connect: before psycopg2 connect call')
+
         conn = psycopg2.connect(**params)
         # create a cursor
         cur = conn.cursor()
@@ -145,7 +147,9 @@ def test_connect():
         # read connection parameters
         params = config()
         # connect to the PostgreSQL server
+        logger.debug(params)
         conn = psycopg2.connect(**params)
+        logger.debug('conn:%s', conn)
         # create a cursor
         cur = conn.cursor()
         
@@ -166,6 +170,6 @@ def test_connect():
         if conn is not None:
             conn.close()
             print('Database connection closed.')
-            return "CONNECTION NOT CLOSED..."
-        return "Success - CONNECTION CLOSED"
+            return "Success - CONNECTION  CLOSED..."
+        return "CONNECTION NOT CLOSED - conn is nulll :( "
  
