@@ -67,7 +67,7 @@ def adduser():
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
-                    query = "SELECT * FROM USERS where username=%s or email=%s"%(username,email)
+                    query = "SELECT * FROM USERS where username='%s' or email='%s';"%(username,email)
                     cur.execute(query)
                     logger.debug('adduser: fetching if username or email exists')
 
@@ -78,7 +78,7 @@ def adduser():
                     if (res == None):
                         logger.debug('adduser: Starting to insert things into the table with %s', res)
 
-                        query = "INSERT INTO USERS (username,password,email,salt) VALUES(%s,%s,%s,%s)";
+                        query = "INSERT INTO USERS (username,password,email,salt) VALUES('%s','%s','%s','%s');";
                         m = hashlib.sha256()
                         psalt = os.urandom(SHA256_SALT_SIZE)
                         val_key = os.urandom(VAL_KEY_SIZE)
@@ -105,6 +105,7 @@ def adduser():
                         cur.close()
                     conn.commit()
                     conn.close()
+                    return jsonify(status=400, error="Connection broke")
 
     logger.debug('adduser: bad json data given')
     return jsonify(status=400, error="No json data was posted")
