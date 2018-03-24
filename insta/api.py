@@ -65,7 +65,12 @@ def adduser():
 
                     query = "SELECT * FROM USERS where username=%s or email=%s"%(username,email)
                     cur.execute(query)
+                    logger.debug('adduser: fetching if username or email exists')
+
                     res = cur.fetchone()
+
+                    logger.debug('adduser: fetched. %s', res)
+
                     if (res == None):
                         logger.debug('adduser: Starting to insert things into the table with %s', res)
 
@@ -82,8 +87,11 @@ def adduser():
                         close_connect(conn,cur)
                         return jsonify(status=200, error="Added user - unvalidated")
                     else:
-                        close_connect(conn,cur)
                         logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
+
+                        close_connect(conn,cur)
+                        logger.debug('adduser: CLOSED CONNECTION')
+
                         return jsonify(status=400, error="Username or email has already been taken.")
                    
                 else:
