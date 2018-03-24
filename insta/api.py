@@ -3,8 +3,15 @@ from flask import render_template,request, redirect, jsonify
 from http import cookies
 from insta.dbconfig import config
 import psycopg2
-import hashlib
 import logging
+import os
+import binascii
+import uuid
+import hashlib
+import base64
+
+## debugging tools
+import traceback
 
 ######################
 ### Set up Logging ###
@@ -35,7 +42,7 @@ logger.addHandler(fh)
 
 mod = Blueprint("api", __name__)
 
-SHA256_SALT_SIZE = 32
+SHA256_SALT_SIZE=5
 VAL_KEY_SIZE=10
 
 
@@ -76,24 +83,32 @@ def adduser():
                     logger.debug('adduser: fetched. %s', res)
 
                     if (res == None):
-                        logger.debug('adduser: Starting to insert things into the table with %s', res)
+                        logger.debug('adduser: Starting to insert things into the table :D with %s', res)
 
-                        query = "INSERT INTO USERS (username,password,email,salt) VALUES('%s','%s','%s','%s');";
-                        m = hashlib.sha256()
-                        psalt = os.urandom(SHA256_SALT_SIZE)
-                        val_key = os.urandom(VAL_KEY_SIZE)
+                        query = "INSERT INTO USERS (username,password,email,validation_key) VALUES('%s','%s','%s','%s','%s');";
+                        # Hash that password
+                        # Generate salt and hash the password
 
-                        dk = hashlib.pbkdf2_hmac('sha256', pwd, psalt, 100000)
-                        salty = binascii.hexlify(dk)
-                        cur.execute(query%(username, pwd, email, psalt, val_key))
+                        query = "INSERT INTO USERS (username,password,email,salt,validation_key) VALUES('%s','%s','%s','%s','%s');";
+                        salty= base64.b64encode(os.urandom(10)).decode()[:SHA256_SALT_SIZE]
+                        logger.debug(salty, "is this good? ", len(salty))
 
-                        logger.debug('adduser: executed insertion of  %s, %s, %s, %s'%(username,password,email,salt))
+                        secret = (pwd + salty).encode()
+                        passwd = hashlib.sha256(secret).hexdigest()
+                        # Generate validation key
+                        val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
+                        logger.debug(val_key, "is this good? ", len(val_key))
+
+                        logger.debug(query%(username,passwd,email,salty,val_key))
+                        cur.execute(query%(username,passwd,email,salty,val_key))
+
+                        logger.debug('adduser: executed insertion of  %s'%(username))
                         cur.close()
                         conn.commit()
                         conn.close()
-                        return jsonify(status=200, error="Added user - unvalidated")
+                        return jsonify(status=200, error="Added user :D - unvalidated")
                     else:
-                        logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
+                        logger.debug('adduser: FAILED insertion of new account: %s'%(username))
                         cur.close()
                         conn.commit()
                         conn.close()
@@ -101,6 +116,7 @@ def adduser():
 
                 except Exception as e:
                     logger.debug('adduser: somthing went wrong: %s',e)
+                    logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
@@ -112,6 +128,14 @@ def adduser():
 
 @mod.route("/login", methods=["POST"])
 def login():
+    if (request.headers.get('Content-Type') == 'application/json'):
+        data = request.get_json(silent=True)
+        if (data != None):
+            username = data["username"]
+            pwd = data["password"]
+            email = data["email"]
+            logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
+
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
 
 @mod.route("/logout", methods=["POST"])
@@ -130,61 +154,67 @@ def test_pg_bouncer():
     return y
 
 
-def pg_connect():
-    conn = None
-    logger.debug('pg_connect: Starting to try to connect')
 
-    try:
-        # read connection parameters
+
+
+# def pg_connect():
+#     conn = None
+#     logger.debug('pg_connect: Starting to try to connect')
+
+#     try:
+#         # read connection parameters
         
-        # connect to the PostgreSQL server
-        logger.debug('pg_connect: before psycopg2 connect call')
+#         # connect to the PostgreSQL server
+#         logger.debug('pg_connect: before psycopg2 connect call')
 
-        conn = psycopg2.connect(**params)
-        # create a cursor
-        cur = conn.cursor()
-        logger.debug('pg_connect: Sreturning connection')
+#         conn = psycopg2.connect(**params)
+#         # create a cursor
+#         cur = conn.cursor()
+#         logger.debug('pg_connect: Sreturning connection')
 
-        return (conn,cur)
-    except (Exception, psycopg2.DatabaseError) as error:
-        logger.error('pg_connect: %s', error)
+#         return (conn,cur)
+#     except (Exception, psycopg2.DatabaseError) as error:
+#         logger.error('pg_connect: %s', error)
 
-        print(params)
-        print(error)
-        return None
+#         print(params)
+#         print(error)
+#         return None
 
-def close_connect(conn, curr):
-    cur.close()
-    conn.commit()
-    conn.close()
+# def close_connect(conn, curr):
+#     cur.close()
+#     conn.commit()
+#     conn.close()
 
-def test_connect():
-    """ Connect to the PostgreSQL database server """
-    conn = None
-    try:
-        # read connection parameters
-        params = config()
-        # connect to the PostgreSQL server
-        logger.debug(params)
+# def test_connect():
+#     """ Connect to the PostgreSQL database server """
+#     conn = None
+#     try:
+#         # read connection parameters
+#         params = config()
+#         # connect to the PostgreSQL server
+#         logger.debug(params)
         
         
-        # Check database version of postgresql
-        cur.execute('SELECT version()')
-        db_version = cur.fetchone()
-        # display the PostgreSQL database server version
-        print(db_version)
+#         # Check database version of postgresql
+#         cur.execute('SELECT version()')
+#         db_version = cur.fetchone()
+#         # display the PostgreSQL database server version
+#         print(db_version)
 
-        # close the communication with the PostgreSQL
-        cur.close()
-        conn.commit()
-    except (Exception, psycopg2.DatabaseError) as error:
-        print(params)
-        print(error)
-        return "TEST CONNECTION FAILED"
-    finally:
-        if conn is not None:
-            conn.close()
-            print('Database connection closed.')
-            return "Success - CONNECTION  CLOSED..."
-        return "CONNECTION NOT CLOSED - conn is nulll :( "
+#         # close the communication with the PostgreSQL
+#         cur.close()
+#         conn.commit()
+#     except (Exception, psycopg2.DatabaseError) as error:
+#         print(params)
+#         print(error)
+#         return "TEST CONNECTION FAILED"
+#     finally:
+#         if conn is not None:
+#             conn.close()
+#             print('Database connection closed.')
+#             return "Success - CONNECTION  CLOSED..."
+#         return "CONNECTION NOT CLOSED - conn is nulll :( "
+
+
+
  
