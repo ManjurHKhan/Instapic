@@ -57,7 +57,7 @@ def adduser():
                 logger.debug('adduser: Doing Connection')
 
                 if (pconn != None):
-                    logger.debug('adduser: Yay connection')
+                    logger.debug('adduser: Yay connection %s', pconn)
 
                     conn = pconn[0]
                     cur = pconn[1]
