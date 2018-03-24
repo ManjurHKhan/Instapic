@@ -37,6 +37,11 @@ mod = Blueprint("api", __name__)
 
 SHA256_SALT_SIZE = 32
 VAL_KEY_SIZE=10
+
+
+params = config()
+
+
 @mod.route("/")
 def hello():
     return "<h1 style='color:green'>Hello Main World!</h1>"
@@ -53,14 +58,13 @@ def adduser():
 
             if (username != None and pwd != None and email != None):
                 #process request
-                pconn = pg_connect()
-                logger.debug('adduser: Doing Connection')
-
-                if (pconn != None):
-                    logger.debug('adduser: Yay connection %s', pconn)
-
-                    conn = pconn[0]
-                    cur = pconn[1]
+                conn = psycopg2.connect(**params)
+                curr = None
+                try:
+                    ### CONNECT TO THE DATABASE
+                    logger.debug('conn:%s', conn)
+                    # create a cursor
+                    cur = conn.cursor()
                     # validate if username or email has already been taken
 
                     query = "SELECT * FROM USERS where username=%s or email=%s"%(username,email)
@@ -84,20 +88,24 @@ def adduser():
                         cur.execute(query%(username, pwd, email, psalt, val_key))
 
                         logger.debug('adduser: executed insertion of  %s, %s, %s, %s'%(username,password,email,salt))
-                        close_connect(conn,cur)
+                        cur.close()
+                        conn.commit()
+                        conn.close()
                         return jsonify(status=200, error="Added user - unvalidated")
                     else:
                         logger.debug('adduser: FAILED insertion of  %s, %s, %s, %s'%(username,password,email,salt))
-
-                        close_connect(conn,cur)
-                        logger.debug('adduser: CLOSED CONNECTION')
-
+                        cur.close()
+                        conn.commit()
+                        conn.close()
                         return jsonify(status=400, error="Username or email has already been taken.")
-                   
-                else:
-                    logger.debug('adduser: Connection failed.')
 
-                    return jsonify(status=500, error="DB Connection failed")
+                except (Exception e):
+                    logger.debug('adduser: somthing went wrong: %s',e)
+                    if (cur != None):
+                        cur.close()
+                    conn.commit()
+                    conn.close()
+
     logger.debug('adduser: bad json data given')
     return jsonify(status=400, error="No json data was posted")
 
@@ -127,7 +135,7 @@ def pg_connect():
 
     try:
         # read connection parameters
-        params = config()
+        
         # connect to the PostgreSQL server
         logger.debug('pg_connect: before psycopg2 connect call')
 
@@ -157,10 +165,7 @@ def test_connect():
         params = config()
         # connect to the PostgreSQL server
         logger.debug(params)
-        conn = psycopg2.connect(**params)
-        logger.debug('conn:%s', conn)
-        # create a cursor
-        cur = conn.cursor()
+        
         
         # Check database version of postgresql
         cur.execute('SELECT version()')
