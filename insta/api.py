@@ -99,7 +99,7 @@ def adduser():
                         conn.close()
                         return jsonify(status=400, error="Username or email has already been taken.")
 
-                except (Exception e):
+                except Exception as e:
                     logger.debug('adduser: somthing went wrong: %s',e)
                     if (cur != None):
                         cur.close()
