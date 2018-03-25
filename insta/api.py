@@ -9,10 +9,10 @@ import binascii
 import uuid
 import hashlib
 import base64
-
+import time
 ## debugging tools
 import traceback
-
+# TODO we have to do something about the conn. We should really call it only inside try.
 ######################
 ### Set up Logging ###
 ######################
@@ -59,14 +59,17 @@ def adduser():
     if (request.headers.get('Content-Type') == 'application/json'):
         data = request.get_json(silent=True)
         if (data != None):
-            username = data["username"]
-            pwd = data["password"]
-            email = data["email"]
+            username = data["username"].strip() if data["username"].strip() != "" else None
+            pwd = data["password"].strip() if data["password"].strip() != "" else None
+            email = data["email"].strip() if data["email"].strip() != "" else None
             logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
 
             if (username != None and pwd != None and email != None):
                 #process request
                 conn = psycopg2.connect(**params)
+                if(conn == None):
+                    logger.debug('DB connection cannot be established for adding user. Returning error', res)
+                    return jsonify(status="error", error="Database connection could not be established")
                 curr = None
                 try:
                     ### CONNECT TO THE DATABASE
@@ -107,13 +110,13 @@ def adduser():
                         cur.close()
                         conn.commit()
                         conn.close()
-                        return jsonify(status=200, error="Added user :D - unvalidated")
+                        return jsonify(status="OK", error="Added user :D - unvalidated")
                     else:
                         logger.debug('adduser: FAILED insertion of new account: %s'%(username))
                         cur.close()
                         conn.commit()
                         conn.close()
-                        return jsonify(status=400, error="Username or email has already been taken.")
+                        return jsonify(status="error", error="Username or email has already been taken.")
 
                 except Exception as e:
                     logger.debug('adduser: somthing went wrong: %s',e)
@@ -122,10 +125,10 @@ def adduser():
                         cur.close()
                     conn.commit()
                     conn.close()
-                    return jsonify(status=400, error="Connection broke")
+                    return jsonify(status="error", error="Connection broke")
 
     logger.debug('adduser: bad json data given')
-    return jsonify(status=400, error="No json data was posted")
+    return jsonify(status="error", error="No json data was posted")
 
 @mod.route("/login", methods=["POST"])
 def login():
@@ -208,11 +211,126 @@ def logout():
 def verify():
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
 
+@mod.route("/additem", methods=["POST"])
+def add_items():
+    conn = psycopg2.connect(**params)
+    curr = None
+    user_cookie = session.get("userID")
+    if (user_cookie != None):
+        if (request.headers.get('Content-Type') == 'application/json'):
+            data = request.get_json(silent=True)
+            if(data != None):
+                content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
+                child_type = data['childType'].strip() if data['childType'].strip() != "" else None
+                if(child_type != None):
+                    if(child_type != "retweet" or child_type != "reply"):
+                        return jsonify(status="error", error="Child type does not match required child type")
+
+                postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
+                try:
+                    logger.debug('conn:%s', conn)
+                    cur = conn.cursor()
+                    query = "INSERT INTO posts(username, postid, content, retweet) VALUES ('%s', '%s', '%s', %r)"% (user_cookie, postid, content, child_type == 'retweet')
+                    logger.debug("query: %s", query)
+                    cur.execute(query)
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="OK", id=postid)
+                except Exception as e:
+                    logger.debug('additem: somthing went wrong: %s',e)
+                    logger.debug(traceback.format_exc())
+                    if (cur != None):
+                        cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="error", error="Connection broke")
+        return jsonify(status="error", error="Data was not valid")
+    return jsonify(status="error", error="Not logged in")
+
+
+@mod.route("item/<id>")
+def get_item(id):
+    conn = psycopg2.connect(**params)
+    curr = None
+    user_cookie = session.get("userID")
+    if (user_cookie != None):
+        try:
+            logger.debug('conn:%s', conn)
+            cur = conn.cursor()
+            query = "SELECT * FROM posts WHERE postid = '%s'" % (str(id))
+            logger.debug("get item query:%s", query)
+            res = cur.execute(query)
+            i = res.fetchone()
+            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))}
+            cur.close()
+            conn.commit()
+            conn.close()
+            return jsonify(status="OK", item = item)
+        except Exception as e:
+            logger.debug('login: error  %s', e)
+            logger.debug(traceback.format_exc())
+            if (cur != None):
+                cur.close()
+            conn.commit()
+            conn.close()
+            return jsonify(status="error", error="Connection error while searching for item")
+    conn.commit()
+    conn.close()
+    return jsonify(status="error", error="User not logged in")
+
+@mod.route("search", methods=["POST"])
+def search():
+    conn = psycopg2.connect(**params)
+    curr = None
+    user_cookie = session.get("userID")
+    if (user_cookie != None):
+        if (request.headers.get('Content-Type') == 'application/json'):
+            data = request.get_json(silent=True)
+            if (data != None):
+                limit = int(data["limit"]) if int(data["limit"]) != None else 25
+                limit = limit if limit < 101 and limit > 0 else 25
+                timestamp = int(data["timestamp"]) if data["limit"] != None else time.time()
+                timestamp = time.ctime(timestamp)
+
+                query = "SELECT * FROM posts WHERE data <= '%s' LIMIT %d" % (timestamp, limit)
+                try:
+                    logger.debug('conn:%s', conn)
+
+                    cur = conn.cursor()
+                    logger.debug('search:%s', query)
+                    res = cur.execute(query)
+                    items = res.fetchall()
+                    ret_items = []
+                    for i in items:
+                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="OK", items=ret_items)
+                except Exception as e:
+                    logger.debug('login: error  %s', e)
+                    logger.debug(traceback.format_exc())
+                    if (cur != None):
+                        cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="error", error="Connection error while searching for items")
+        conn.commit()
+        conn.close()
+        return jsonify(status="error", error="Data not valid")
+    conn.commit()
+    conn.close()
+    return jsonify(status="error", error="User not logged in")
+
+
+
 
 @mod.route("/test_connection")
 def test_pg_bouncer():
-    y = test_connect()
-    return y
+#    y = test_connect()
+#    return y
+    return None
 
 
 
