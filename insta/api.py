@@ -249,11 +249,12 @@ def add_items():
     return jsonify(status="error", error="Not logged in")
 
 
-@mod.route("item/<id>")
+@mod.route("/item/<id>")
 def get_item(id):
     conn = psycopg2.connect(**params)
     curr = None
     user_cookie = session.get("userID")
+    print(user_cookie)
     if (user_cookie != None):
         try:
             logger.debug('conn:%s', conn)
@@ -279,7 +280,7 @@ def get_item(id):
     conn.close()
     return jsonify(status="error", error="User not logged in")
 
-@mod.route("search", methods=["POST"])
+@mod.route("/search", methods=["POST"])
 def search():
     conn = psycopg2.connect(**params)
     curr = None
