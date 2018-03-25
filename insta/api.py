@@ -1,5 +1,5 @@
 from flask import Flask, Blueprint
-from flask import render_template,request, redirect, jsonify
+from flask import render_template,request, redirect, jsonify, make_response, session
 from http import cookies
 from insta.dbconfig import config
 import psycopg2
@@ -41,6 +41,7 @@ logger.addHandler(fh)
 ######################
 
 mod = Blueprint("api", __name__)
+
 
 SHA256_SALT_SIZE=5
 VAL_KEY_SIZE=10
@@ -128,20 +129,80 @@ def adduser():
 
 @mod.route("/login", methods=["POST"])
 def login():
+    conn = psycopg2.connect(**params)
+    curr = None
+    user_cookie = session.get("userID")
+    if (user_cookie != None):
+        cur = conn.cursor()
+        query = "SELECT username FROM USERS where validation_key='%s' and validated is True"%(user_cookie)
+        cur.execute(query)
+        rez = cur.fetchone()
+        if rez != None:
+            # login
+            cur.close()
+            conn.close()
+            return jsonify(status="OK")
     if (request.headers.get('Content-Type') == 'application/json'):
         data = request.get_json(silent=True)
         if (data != None):
             username = data["username"]
             pwd = data["password"]
-            email = data["email"]
-            logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
+            logger.debug('login: json post things: %s, %s'%(username,pwd))
+            if (username != None and pwd != None):
+                  #process request
+                
+                try:
+                    ### CONNECT TO THE DATABASE
+                    logger.debug('conn:%s', conn)
+                    # create a cursor
+                    cur = conn.cursor()
+                    # validate if username or email has already been taken
+
+                    query = "SELECT salt, password, validation_key FROM USERS where username='%s' and validated is True"%(username)
+                    cur.execute(query)
+                    # there should be only one  - we did all proper checks in add users, so hopefully there is only one
+                    res = cur.fetchone()
+                    if res != None:
+                        salt = res[0]
+                        secret_pass = res[1]
+                        cookie_key = res[2] # Just going to use the validation key as the cookie id
+                        logger.debug(salt, secret_pass,cookie_key)
+
+
+                        secret = (pwd + salt).encode()
+                        passwd = hashlib.sha256(secret).hexdigest()
+                        logger.debug(secret,passwd)
+
+                        if (passwd  == secret_pass):
+                            #set cookie
+                            resp = jsonify(status="OK")
+                            session["userID"] = cookie_key
+                            return resp
+                    else:
+                        cur.close()
+                        conn.close()
+                        return jsonify(status="error", error="Inputted account details are not for a valid account.")
+                except Exception as e:
+                    logger.debug('login: error  %s',e)
+                    logger.debug(traceback.format_exc())
+                    if (cur != None):
+                        cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="error", error="Connection broke while trying to login ")
+    logger.debug('login: bad json data given')
+    return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
+
 
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
 
 @mod.route("/logout", methods=["POST"])
 def logout():
-    
-    return "<h1 style='color:blue'>Hello Blah World!</h1>"
+    #resp = make_response()
+    session.pop('userID', None)
+    #resp.set_cookie('userID', expires=0)
+    logger.debug('logged out')
+    return jsonify(status="OK")
 
 @mod.route("/verify", methods=["POST"])
 def verify():
