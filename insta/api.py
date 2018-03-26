@@ -160,6 +160,7 @@ def login():
             cur.close()
             conn.close()
             return jsonify(status="OK")
+
     if (request.headers.get('Content-Type') == 'application/json'):
         data = request.get_json(silent=True)
         if (data != None):
@@ -168,7 +169,6 @@ def login():
             logger.debug('login: json post things: %s, %s'%(username,pwd))
             if (username != None and pwd != None):
                   #process request
-                
                 try:
                     ### CONNECT TO THE DATABASE
                     logger.debug('conn:%s', conn)
@@ -176,7 +176,7 @@ def login():
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
-                    query = "SELECT salt, password, username, validation_key FROM USERS where username='%s' and validated is True"%(username)
+                    query = "SELECT salt, password, username FROM USERS where username='%s' and validated is True"%(username)
                     cur.execute(query)
                     # there should be only one  - we did all proper checks in add users, so hopefully there is only one
                     res = cur.fetchone()
@@ -196,6 +196,7 @@ def login():
                             #set cookie
                             resp = jsonify(status="OK")
                             session["userID"] = cookie_key
+                            session["validated"] = True
                             return resp
                     else:
                         cur.close()
@@ -219,6 +220,7 @@ def login():
 def logout():
     #resp = make_response()
     session.pop('userID', None)
+    session.pop('validated', None)
     #resp.set_cookie('userID', expires=0)
     logger.debug('logged out')
     return jsonify(status="OK")
