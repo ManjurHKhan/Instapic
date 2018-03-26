@@ -396,8 +396,8 @@ def search():
                     logger.debug('search posts query:%s', query)
                     cur.execute(query)
                     items = cur.fetchall()
-                    # if items == None:
-                    #     return jsonify(status="OK",  items=items)
+                    if items == None:
+                        return jsonify(status="OK",  items=[])
                     ret_items = []
                     for i in items:
                         ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S')))})
