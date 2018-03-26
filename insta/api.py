@@ -375,7 +375,7 @@ def search():
                 timestamp = int(data["timestamp"]) if data["limit"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
-                query = "SELECT * FROM posts WHERE data <= '%s' LIMIT %d" % (timestamp, limit)
+                query = "SELECT * FROM posts WHERE date <= '%s' LIMIT %d" % (timestamp, limit)
                 try:
                     logger.debug('conn:%s', conn)
 
@@ -385,7 +385,9 @@ def search():
                     items = cur.fetchall()
                     ret_items = []
                     for i in items:
-                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
+                        logger.debug (i[2])
+                        #print (i[2].split('.'))
+                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
                     cur.close()
                     conn.commit()
                     conn.close()
