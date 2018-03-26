@@ -342,8 +342,8 @@ def get_item(id):
             cur = conn.cursor()
             query = "SELECT * FROM posts WHERE postid = '%s'" % (str(id))
             logger.debug("get item query:%s", query)
-            res = cur.execute(query)
-            i = res.fetchone()
+            cur.execute(query)
+            i = cur.fetchone()
             item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))}
             cur.close()
             conn.commit()
@@ -381,8 +381,8 @@ def search():
 
                     cur = conn.cursor()
                     logger.debug('search:%s', query)
-                    res = cur.execute(query)
-                    items = res.fetchall()
+                    cur.execute(query)
+                    items = cur.fetchall()
                     ret_items = []
                     for i in items:
                         ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
