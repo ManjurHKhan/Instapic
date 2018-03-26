@@ -283,6 +283,7 @@ def add_items():
     conn = psycopg2.connect(**params)
     curr = None
     user_cookie = session.get("userID")
+    logger.debug("current user: %s", user_cookie)
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
@@ -290,9 +291,10 @@ def add_items():
                 content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
                 child_type = data['childType'].strip() if data['childType'].strip() != "" else None
                 if(child_type != None):
-                    if(child_type != "retweet" or child_type != "reply"):
+                    if(child_type != "retweet" and child_type != "reply"):
                         return jsonify(status="error", error="Child type does not match required child type")
-
+                if(content == None):
+                    return jsonify(status="error", error="Content is null")
                 postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
                 try:
                     logger.debug('conn:%s', conn)
