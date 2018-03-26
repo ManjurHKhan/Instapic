@@ -370,9 +370,13 @@ def search():
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
             if (data != None):
-                limit = int(data["limit"]) if int(data["limit"]) != None else 25
-                limit = limit if limit < 101 and limit > 0 else 25
-                timestamp = int(data["timestamp"]) if data["limit"] != None else time.time()
+                limit = 25
+                if "limit" in data:
+                    limit = int(data["limit"]) if int(data["limit"]) != None else 25
+                    limit = limit if limit < 101 and limit > 0 else 25
+                timestamp = time.time()
+                if "timestamp" in data:
+                    timestamp = int(data["timestamp"]) if data["limit"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
                 query = "SELECT * FROM posts WHERE date <= '%s' LIMIT %d" % (timestamp, limit)
