@@ -10,6 +10,8 @@ import uuid
 import hashlib
 import base64
 import time
+import smtplib
+
 ## debugging tools
 import traceback
 # TODO we have to do something about the conn. We should really call it only inside try.
@@ -88,25 +90,38 @@ def adduser():
 
                     if (res == None):
                         logger.debug('adduser: Starting to insert things into the table :D with %s', res)
-
-                        query = "INSERT INTO USERS (username,password,email,validation_key) VALUES('%s','%s','%s','%s','%s');";
-                        # Hash that password
+                        query = "INSERT INTO USERS (username,password,email,salt) VALUES ('%s','%s','%s','%s');";
+                        
                         # Generate salt and hash the password
-
-                        query = "INSERT INTO USERS (username,password,email,salt,validation_key) VALUES('%s','%s','%s','%s','%s');";
                         salty= base64.b64encode(os.urandom(10)).decode()[:SHA256_SALT_SIZE]
                         logger.debug(salty, "is this good? ", len(salty))
 
+                        # Hash that password
                         secret = (pwd + salty).encode()
                         passwd = hashlib.sha256(secret).hexdigest()
                         # Generate validation key
                         val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
+                        
                         logger.debug(val_key, "is this good? ", len(val_key))
 
-                        logger.debug(query%(username,passwd,email,salty,val_key))
-                        cur.execute(query%(username,passwd,email,salty,val_key))
+                        logger.debug(query%(username,passwd,email,salty))
+                        cur.execute(query%(username,passwd,email,salty))
 
+                        query = "INSERT INTO VALIDATE (username,validkey) VALUES ('%s','%s');";
+                        cur.execute(query%(username, val_key))
                         logger.debug('adduser: executed insertion of  %s'%(username))
+
+                        # Send validation email
+                        mail = smtplib.SMTP('smtp.gmail.com',587)
+                        mail.ehlo()
+                        mail.starttls()
+                        ouremail = "manjur.tempcse311@gmail.com"
+                        mail.login(ouremail,os.environ['manjur_pass'])
+                        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nYour validation code is <%s>" % (email, val_key)
+
+                        mail.sendmail(ouremail,email,content)
+
+
                         cur.close()
                         conn.commit()
                         conn.close()
@@ -137,7 +152,7 @@ def login():
     user_cookie = session.get("userID")
     if (user_cookie != None):
         cur = conn.cursor()
-        query = "SELECT username FROM USERS where validation_key='%s' and validated is True"%(user_cookie)
+        query = "SELECT username FROM USERS where username='%s' and validated is True"%(user_cookie)
         cur.execute(query)
         rez = cur.fetchone()
         if rez != None:
@@ -161,14 +176,15 @@ def login():
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
-                    query = "SELECT salt, password, validation_key FROM USERS where username='%s' and validated is True"%(username)
+                    query = "SELECT salt, password, username, validation_key FROM USERS where username='%s' and validated is True"%(username)
                     cur.execute(query)
                     # there should be only one  - we did all proper checks in add users, so hopefully there is only one
                     res = cur.fetchone()
                     if res != None:
                         salt = res[0]
                         secret_pass = res[1]
-                        cookie_key = res[2] # Just going to use the validation key as the cookie id
+                        #cookie_key = res[3] # Just going to use the validation key as the cookie id
+                        cookie_key = res[2] # Just going to use the username as the cookie id
                         logger.debug(salt, secret_pass,cookie_key)
 
 
@@ -209,7 +225,53 @@ def logout():
 
 @mod.route("/verify", methods=["POST"])
 def verify():
-    return "<h1 style='color:blue'>Hello Blah World!</h1>"
+    conn = psycopg2.connect(**params)
+    curr = None
+    
+    data = request.get_json(silent=True)
+    if (data != None):
+        key = data["key"].strip() if data["key"].strip() != "" else None
+        email = data["email"].strip() if data["email"].strip() != "" else None
+        if (key == None or email == None ):
+            return jsonify(status="error", error="Invalid Verify inputs.")
+        else:
+            try:
+                logger.debug('conn:%s', conn)
+                cur = conn.cursor()
+                query = "SELECT username FROM users where email='%s' and validated is False"%(email)
+                logger.debug("verify query: %s", query)
+                cur.execute(query)
+                rez = cur.fetchone()
+                if (rez == None):
+                    return jsonify(status="error", error="Invalid Verify inputs.")
+                else:
+                    username = rez[0]
+                    logger.debug("verify: Username: %s,"%(username))
+                    query = "SELECT * FROM validate where username='%s' and validkey='%s'"%(username,key)
+
+                    cur.execute(query)
+                    rez = cur.fetchone()
+                    if (rez == None):
+                        return jsonify(status="error", error="Invalid Verify inputs.")
+
+                    query = "UPDATE users set validated=True where username='%s' and validated is False"%(username)
+                    
+                    cur.execute(query)
+
+                    # should we delete query
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="OK")
+            except Exception as e:
+                logger.debug('additem: somthing went wrong: %s',e)
+                logger.debug(traceback.format_exc())
+                if (cur != None):
+                    cur.close()
+                conn.commit()
+                conn.close()
+                return jsonify(status="error", error="Connection broke in verifying")
+    return jsonify(status="error", error="No data posted. :( ")
 
 @mod.route("/additem", methods=["POST"])
 def add_items():
@@ -327,74 +389,4 @@ def search():
 
 
 
-@mod.route("/test_connection")
-def test_pg_bouncer():
-#    y = test_connect()
-#    return y
-    return None
 
-
-
-
-
-# def pg_connect():
-#     conn = None
-#     logger.debug('pg_connect: Starting to try to connect')
-
-#     try:
-#         # read connection parameters
-        
-#         # connect to the PostgreSQL server
-#         logger.debug('pg_connect: before psycopg2 connect call')
-
-#         conn = psycopg2.connect(**params)
-#         # create a cursor
-#         cur = conn.cursor()
-#         logger.debug('pg_connect: Sreturning connection')
-
-#         return (conn,cur)
-#     except (Exception, psycopg2.DatabaseError) as error:
-#         logger.error('pg_connect: %s', error)
-
-#         print(params)
-#         print(error)
-#         return None
-
-# def close_connect(conn, curr):
-#     cur.close()
-#     conn.commit()
-#     conn.close()
-
-# def test_connect():
-#     """ Connect to the PostgreSQL database server """
-#     conn = None
-#     try:
-#         # read connection parameters
-#         params = config()
-#         # connect to the PostgreSQL server
-#         logger.debug(params)
-        
-        
-#         # Check database version of postgresql
-#         cur.execute('SELECT version()')
-#         db_version = cur.fetchone()
-#         # display the PostgreSQL database server version
-#         print(db_version)
-
-#         # close the communication with the PostgreSQL
-#         cur.close()
-#         conn.commit()
-#     except (Exception, psycopg2.DatabaseError) as error:
-#         print(params)
-#         print(error)
-#         return "TEST CONNECTION FAILED"
-#     finally:
-#         if conn is not None:
-#             conn.close()
-#             print('Database connection closed.')
-#             return "Success - CONNECTION  CLOSED..."
-#         return "CONNECTION NOT CLOSED - conn is nulll :( "
-
-
-
- 
