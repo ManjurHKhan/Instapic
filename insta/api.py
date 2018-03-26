@@ -343,8 +343,16 @@ def get_item(id):
             cur.execute(query)
             i = cur.fetchone()
             if i == None:
+                cur.close()
+                conn.close()
                 return jsonify(status="error", error = "Item not Found")
-            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))}
+            # logger.debug("get_item - time: %s", i[2])
+            # logger.debug("get_item -", (i[2].split('.')))
+            # logger.debug("get_item -", (str(i[2]).split('.')))
+
+            # logger.debug("get_item -", int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%dT%H:%M:%S'))))
+
+            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S')))}
             cur.close()
             conn.commit()
             conn.close()
@@ -389,7 +397,7 @@ def search():
                     items = cur.fetchall()
                     ret_items = []
                     for i in items:
-                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
+                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S')))})
                     cur.close()
                     conn.commit()
                     conn.close()
