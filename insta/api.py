@@ -119,7 +119,7 @@ def adduser():
                         passemailcode=email_config()["password"]
 
                         mail.login(ouremail,passemailcode)
-                        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nYour validation code is <%s>" % (email, val_key)
+                        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
 
                         mail.sendmail(ouremail,email,content)
 
@@ -229,9 +229,8 @@ def logout():
 
 @mod.route("/verify", methods=["POST"])
 def verify():
-    conn = psycopg2.connect(**params)
-    curr = None
-    
+    logger.debug("start_verify %s", query)
+
     data = request.get_json(silent=True)
     if (data != None):
         key = data["key"].strip() if data["key"].strip() != "" else None
@@ -240,6 +239,8 @@ def verify():
             return jsonify(status="error", error="Invalid Verify inputs.")
         else:
             try:
+                conn = psycopg2.connect(**params)
+                curr = None
                 logger.debug('conn:%s', conn)
                 cur = conn.cursor()
                 query = "SELECT username FROM users where email='%s' and validated is False"%(email)
@@ -268,7 +269,7 @@ def verify():
                     conn.close()
                     return jsonify(status="OK")
             except Exception as e:
-                logger.debug('additem: somthing went wrong: %s',e)
+                logger.debug('verify: somthing went wrong: %s',e)
                 logger.debug(traceback.format_exc())
                 if (cur != None):
                     cur.close()
