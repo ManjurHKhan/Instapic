@@ -377,10 +377,12 @@ def search():
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
+            logger.debug('search data:%s', data)
+
             if (data != None):
                 limit = 25
                 if "limit" in data:
-                    limit = int(data["limit"]) if int(data["limit"]) != None else 25
+                    limit = int(data["limit"]) if data["limit"] != None else 25
                     limit = limit if limit < 101 and limit > 0 else 25
                 timestamp = time.time()
                 if "timestamp" in data:
@@ -389,12 +391,13 @@ def search():
 
                 query = "SELECT * FROM posts WHERE date <= '%s' LIMIT %d" % (timestamp, limit)
                 try:
-                    logger.debug('conn:%s', conn)
-
+                    logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
-                    logger.debug('search:%s', query)
+                    logger.debug('search posts query:%s', query)
                     cur.execute(query)
                     items = cur.fetchall()
+                    # if items == None:
+                    #     return jsonify(status="OK",  items=items)
                     ret_items = []
                     for i in items:
                         ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S')))})
@@ -410,14 +413,10 @@ def search():
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection error while searching for items")
-        conn.commit()
         conn.close()
         return jsonify(status="error", error="Data not valid")
-    conn.commit()
     conn.close()
     return jsonify(status="error", error="User not logged in")
-
-
 
 
 
