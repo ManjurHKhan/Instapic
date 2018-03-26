@@ -229,7 +229,7 @@ def logout():
 
 @mod.route("/verify", methods=["POST"])
 def verify():
-    logger.debug("start_verify %s", query)
+    logger.debug("start_verify")
 
     data = request.get_json(silent=True)
     if (data != None):
