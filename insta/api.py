@@ -386,7 +386,7 @@ def search():
                     limit = limit if limit < 101 and limit > 0 else 25
                 timestamp = time.time()
                 if "timestamp" in data:
-                    timestamp = int(data["timestamp"]) if data["limit"] != None else time.time()
+                    timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
                 query = "SELECT * FROM posts WHERE date <= '%s' LIMIT %d" % (timestamp, limit)
