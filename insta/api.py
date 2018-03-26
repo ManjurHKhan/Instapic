@@ -292,8 +292,12 @@ def add_items():
             data = request.get_json(silent=True)
             if(data != None):
                 try:
-                    content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
-                    child_type = data['childType'].strip() if data['childType'].strip() != "" else None
+                    content = None
+                    child_type = None
+                    if "content" in data:
+                        content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
+                    if "childType" in data:
+                        child_type = data['childType'].strip() if data['childType'].strip() != "" else None
                     if(child_type != None):
                         if(child_type != "retweet" and child_type != "reply"):
                             return jsonify(status="error", error="Child type does not match required child type")
