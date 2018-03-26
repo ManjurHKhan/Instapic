@@ -322,8 +322,6 @@ def add_items():
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection broke")
-        if (cur != None):
-            cur.close()
         conn.close()
         return jsonify(status="error", error="Data was not valid")
     conn.close()
@@ -344,7 +342,9 @@ def get_item(id):
             logger.debug("get item query:%s", query)
             cur.execute(query)
             i = cur.fetchone()
-            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamt': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))}
+            if i == None:
+                return jsonify(status="error", error = "Item not Found")
+            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))}
             cur.close()
             conn.commit()
             conn.close()
@@ -389,8 +389,6 @@ def search():
                     items = cur.fetchall()
                     ret_items = []
                     for i in items:
-                        logger.debug (i[2])
-                        #print (i[2].split('.'))
                         ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(i[2].split('.')[0], '%Y-%m-%dT%H:%M:%S')))})
                     cur.close()
                     conn.commit()
