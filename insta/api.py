@@ -212,6 +212,9 @@ def login():
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection broke while trying to login ")
+    if (cur != None):
+        cur.close()
+    conn.close()
     logger.debug('login: bad json data given')
     return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
 
@@ -315,7 +318,11 @@ def add_items():
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection broke")
+        if (cur != None):
+            cur.close()
+        conn.close()
         return jsonify(status="error", error="Data was not valid")
+    conn.close()
     return jsonify(status="error", error="Not logged in")
 
 
