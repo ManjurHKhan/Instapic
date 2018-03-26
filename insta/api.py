@@ -1,7 +1,7 @@
 from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify, make_response, session
 from http import cookies
-from insta.dbconfig import config
+from insta.dbconfig import config, email_config
 import psycopg2
 import logging
 import os
@@ -116,7 +116,9 @@ def adduser():
                         mail.ehlo()
                         mail.starttls()
                         ouremail = "manjur.tempcse311@gmail.com"
-                        mail.login(ouremail,os.environ['manjur_pass'])
+                        passemailcode=email_config()["password"]
+
+                        mail.login(ouremail,passemailcode)
                         content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nYour validation code is <%s>" % (email, val_key)
 
                         mail.sendmail(ouremail,email,content)
