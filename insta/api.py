@@ -513,13 +513,9 @@ def users_user_is_following():
 
 @mod.route("/follow", methods=["POST"])
 def user_follow():
-    logger.debug('top follow: hello ')
+    logger.debug('top follow: starting endpoint eval ')
     try:
-        logger.debug('starting connection ')
-
         conn = psycopg2.connect(**params)
-        logger.debug('connected ')
-
         cur = None
         user_cookie = session.get("userID")
         if (user_cookie != None):
@@ -533,8 +529,6 @@ def user_follow():
                 cur.close()
                 conn.close()
                 return jsonify(status="OK")
-        
-
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
             if (data != None):
@@ -543,9 +537,8 @@ def user_follow():
                 username = data["username"].strip()
                 follow = True
                 if "follows" in data:
-                    logger.debug("%s, "%data["follows"].strip().capitalize())
                     follow = data["follows"].strip().capitalize() == "True"
-                    logger.debug("foollow %s" %follow)
+                    
                 # disallowing following no one, and following oneself
                 if (username != None and username != user_cookie):
                     #validate the username
