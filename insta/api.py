@@ -446,7 +446,7 @@ def del_item(id):
 
 @mod.route("/user/<username>", methods=["GET"])
 @mod.route("/user/<username>/followers", methods=["GET"])
-def user_followers():
+def user_followers(username):
     try:
         conn = psycopg2.connect(**params)
         curr = None
@@ -464,14 +464,15 @@ def user_followers():
                 return jsonify(status="error", error="you are not loggged in")
             limit=50
             ### check limit params
-            ll = requests.args.get("limit")
+            ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT username FROM follows where follows='%s' LIMIT %s"%(user_cookie, limit)
+            query = "SELECT username FROM followers where follows='%s' LIMIT %s"%(username, limit)
             cur.execute(query)
             rez = cur.fetchall()
+            followers = [y for row in rez for y in row]
             print (rez)
-            return jsonify(status="ok",users=rez)
+            return jsonify(status="ok",users=followers)
 
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
@@ -480,7 +481,7 @@ def user_followers():
 
 
 @mod.route("/user/<username>/following", methods=["GET"])
-def users_user_is_following():
+def users_user_is_following(username):
     try:
         conn = psycopg2.connect(**params)
         curr = None
@@ -498,13 +499,15 @@ def users_user_is_following():
                 return jsonify(status="error", error="you are not loggged in")
             limit=50
             ### check limit params
-            ll = requests.args.get("limit")
+            ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT follows FROM follows where username='%s' LIMIT %s"%(user_cookie, limit)
+            query = "SELECT follows FROM followers where username='%s' LIMIT %s"%(username, limit)
+            logger.debug(query)
             cur.execute(query)
             rez = cur.fetchall()
-            return jsonify(status="ok",users=rez)
+            followings = [y for row in rez for y in row]
+            return jsonify(status="ok",users=followings)
 
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
