@@ -472,7 +472,7 @@ def user_followers(username):
             rez = cur.fetchall()
             followers = [y for row in rez for y in row]
             print (rez)
-            return jsonify(status="ok",users=followers)
+            return jsonify(status="OK",users=followers)
 
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
@@ -507,7 +507,7 @@ def users_user_is_following(username):
             cur.execute(query)
             rez = cur.fetchall()
             followings = [y for row in rez for y in row]
-            return jsonify(status="ok",users=followings)
+            return jsonify(status="OK",users=followings)
 
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
@@ -571,7 +571,7 @@ def user_follow():
                     cur.close()
                     conn.commit()
                     conn.close()
-                    return jsonify(status="ok",msg="updated followers")
+                    return jsonify(status="OK",msg="updated followers")
         return jsonify(status="error",error="Invalid request - send json please.")
         
     except Exception as e:
