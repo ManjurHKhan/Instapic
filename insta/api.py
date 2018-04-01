@@ -418,18 +418,18 @@ def search():
     conn.close()
     return jsonify(status="error", error="User not logged in")
 
-@mod.route("/item/<id>", methods=["POST"])
+@mod.route("/item/<id>", methods=["DELETE"])
 def del_item(id):
     try:
         conn = psycopg2.connect(**params)
-        curr = None
+        cur = None
         user_cookie = session.get("userID")
         user_cookie = "dummy user"
         if (user_cookie != None):
             # we should validate the cookie here...
 
-            curr = conn.cursor()
-            query="DELETE FROM posts where id = '%s'"% (str(id))
+            cur = conn.cursor()
+            query="DELETE FROM posts where postid = '%s'"% (str(id))
             cur.execute(query) 
             cur.close()
             conn.commit()
@@ -440,7 +440,7 @@ def del_item(id):
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
-        return 
+        return jsonify(status="error", error="item not deleted....")
     return jsonify(status="OK")
 
 
@@ -538,7 +538,7 @@ def user_follow():
                 follow = True
                 if "follows" in data:
                     follow = data["follows"].strip().capitalize() == "True"
-                    
+
                 # disallowing following no one, and following oneself
                 if (username != None and username != user_cookie):
                     #validate the username
