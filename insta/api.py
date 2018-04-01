@@ -464,10 +464,13 @@ def user_followers():
                 return jsonify(status="error", error="you are not loggged in")
             limit=50
             ### check limit params
-
+            ll = requests.args.get("limit")
+            if ll != None and int(ll) <= 200 :
+                limit = int(ll)
             query = "SELECT username FROM follows where follows='%s' LIMIT %s"%(user_cookie, limit)
             cur.execute(query)
             rez = cur.fetchall()
+            print (rez)
             return jsonify(status="ok",users=rez)
 
     except Exception as e:
@@ -495,7 +498,9 @@ def users_user_is_following():
                 return jsonify(status="error", error="you are not loggged in")
             limit=50
             ### check limit params
-
+            ll = requests.args.get("limit")
+            if ll != None and int(ll) <= 200 :
+                limit = int(ll)
             query = "SELECT follows FROM follows where username='%s' LIMIT %s"%(user_cookie, limit)
             cur.execute(query)
             rez = cur.fetchall()
@@ -508,33 +513,41 @@ def users_user_is_following():
 
 @mod.route("/follow", methods=["POST"])
 def user_follow():
-    conn = psycopg2.connect(**params)
-    curr = None
-    user_cookie = session.get("userID")
-    if (user_cookie != None):
-        cur = conn.cursor()
-        # check to make sure user is in the database
-        query = "SELECT username FROM USERS where username='%s' and validated is True"%(user_cookie)
-        cur.execute(query)
-        rez = cur.fetchone()
-        if rez == None:
-            # login
-            cur.close()
-            conn.close()
-            return jsonify(status="OK")
+    logger.debug('top follow: hello ')
+    try:
+        logger.debug('starting connection ')
 
-    if (request.headers.get('Content-Type') == 'application/json'):
-        data = request.get_json(silent=True)
-        if (data != None):
-            if "username" not in data: 
-                return jsonify(status="error", error="no username provided who are you following? ")
-            username = data["username"]
-            follow = True
-            if "follow" in data:
-                follow = boolean(data["follow"])
-            # disallowing following no one, and following oneself
-            if (username != None and username != user_cookie):
-                try: 
+        conn = psycopg2.connect(**params)
+        logger.debug('connected ')
+
+        cur = None
+        user_cookie = session.get("userID")
+        if (user_cookie != None):
+            cur = conn.cursor()
+            # check to make sure user is in the database
+            query = "SELECT username FROM USERS where username='%s' and validated is True"%(user_cookie)
+            cur.execute(query)
+            rez = cur.fetchone()
+            if rez == None:
+                # login
+                cur.close()
+                conn.close()
+                return jsonify(status="OK")
+        
+
+        if (request.headers.get('Content-Type') == 'application/json'):
+            data = request.get_json(silent=True)
+            if (data != None):
+                if "username" not in data: 
+                    return jsonify(status="error", error="no username provided who are you following? ")
+                username = data["username"].strip()
+                follow = True
+                if "follows" in data:
+                    logger.debug("%s, "%data["follows"].strip().capitalize())
+                    follow = data["follows"].strip().capitalize() == "True"
+                    logger.debug("foollow %s" %follow)
+                # disallowing following no one, and following oneself
+                if (username != None and username != user_cookie):
                     #validate the username
                     cur = conn.cursor()
                     query = "SELECT username FROM USERS where username='%s' and validated is True"%(username)
@@ -548,22 +561,26 @@ def user_follow():
 
                     if (follow):
                         #Following
-                        query = "INSERT INTO follows (username, follows) VALUES('%s','%s') " % (user_cookie, username)
+                        query = "INSERT INTO followers (username, follows) VALUES('%s','%s') " % (user_cookie, username)
                         #cur.execute(query) 
                         #query = "INSERT INTO following (username, following) VALUES('%s','%s') " % (username, user_cookie)
                         #cur.execute(query) 
                     else:
-                        query = "DELETE FROM follows WHERE username='%s' and follow='%s'"%(user_cookie, username)
+                        query = "DELETE FROM followers WHERE username='%s' and follows='%s'"%(user_cookie, username)
                         #cur.execute(query) 
                         #query = "DELETE FROM follows WHERE username='%s' and follow='%s'"%(username, user_cookie )
                         #cur.execute(query)
 
                     cur.execute(query)
-                    return jsonify(status="oka",error="Some DB connection failed probably while trying to follow")
-
-                except Exception as e:
-                    logger.debug('follow: error  %s', e)
-                    logger.debug(traceback.format_exc())
-                    return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
+                    cur.close()
+                    conn.commit()
+                    conn.close()
+                    return jsonify(status="ok",msg="updated followers")
+        return jsonify(status="error",error="Invalid request - send json please.")
+        
+    except Exception as e:
+        logger.error('follow: Error  %s', e)
+        logger.debug(traceback.format_exc())
+        return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
                    
