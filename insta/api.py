@@ -379,7 +379,7 @@ def search():
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
-            logger.debug('search data:%s', data)
+            logger.debug('%s username -- search data:%s' % (user_cookie, data))
 
             if (data != None):
                 limit = 25
@@ -408,10 +408,14 @@ def search():
                     q_string = "%%%s%%" % (data["q"])
                     query += "AND content = %s "
                     q_data += (q_string,)
-
+                if username == None and !following:
+                    query += "AND username = %s "
+                    q_data += (user_cookie,)
+                    
                 if following:
                     query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) "
                     q_data += (user_cookie,)
+                    
                 query += "LIMIT %s;"
                 q_data += (limit,)
                 logger.debug("search query %s", query % (q_data))
