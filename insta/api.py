@@ -414,8 +414,7 @@ def search():
                     q_data += (user_cookie,)
                 query += "LIMIT %s;"
                 q_data += (limit,)
-                logger.debug("search query %s", query)
-                logger.debug("q_data %s", str(q_data))
+                logger.debug("search query %s", query % (q_data))
 
                 try:
                     conn = psycopg2.connect(**params)
@@ -425,6 +424,7 @@ def search():
                     cur.execute(query, q_data)
                     items = cur.fetchall()
                     if items == None:
+                        logger.debug("NONE fetch for query %s" % (query))
                         return jsonify(status="OK",  items=[])
                     ret_items = []
                     for i in items:
@@ -476,16 +476,40 @@ def del_item(id):
 @mod.route("/user/<username>", methods=["GET"])
 def user_info(username):
     try:
-        conn = None
-        curr = None
+        conn = psycopg2.connect(**params)
+        logger.debug('search conn:%s', conn)
+        cur = conn.cursor()
+
+        ret_user = {'email':None, followers:0, following:0}
+        
         user_cookie = session.get("userID")
         if (user_cookie != None):
-            query = "SELECT * FROM USERS"
+            query = "SELECT email FROM users where username = %s;"
+            cur.execute(query, (username,))
+            items = cur.fetchone()
+            ret_user['email'] = items[0]
+            
+            query = "SELECT COUNT(follows) FROM followers WHERE follows = %s;"
+            cur.execute(query, (username,))
+            items = cur.fetchone()
+            ret_user['followers'] = items[0]
+
+            query = "SELECT count(follows) FROM followers WHERE username = %s;"
+            cur.execute(query, (username,))
+            items = cur.fetchone()
+            ret_user['following'] = items[0]
+            logger.debug("/user/%s returned %s", username, str(ret_user))
+            
+            cur.close()
+            conn.commit()
+            conn.close()
+            return jsonify(status="OK", user = ret_user)
+
     except Exception as e:
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
-        return jsonify(status="error", error="item not deleted....")
-    return jsonify(status="error", error="did not finish this yet")
+        return jsonify(status="error", error="user not found")
+    return jsonify(status="error", error="user not found")
 
 @mod.route("/user/<username>/followers", methods=["GET"])
 def user_followers(username):
