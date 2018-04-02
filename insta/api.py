@@ -308,8 +308,8 @@ def add_items():
                 
                     logger.debug('conn:%s', conn)
                     cur = conn.cursor()
-                    content = content.replace("'", "''").encode('UTF-8')
-                    query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %r);"
+                    # content = content.replace("'", "''").encode('UTF-8')
+                    query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %s);"
                     logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                     cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', ))
                     cur.close()
