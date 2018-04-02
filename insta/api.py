@@ -470,7 +470,7 @@ def user_followers(username):
             ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT username FROM followers where follows=%s LIMIT %d;"
+            query = "SELECT username FROM followers where follows=%s LIMIT %s;"
             cur.execute(query, (username, limit, ))
             rez = cur.fetchall()
             followers = [y for row in rez for y in row]
@@ -505,7 +505,7 @@ def users_user_is_following(username):
             ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT follows FROM followers where username=%s LIMIT %d;"
+            query = "SELECT follows FROM followers where username=%s LIMIT %s;"
             logger.debug(query)
             cur.execute(query, (username, limit,))
             rez = cur.fetchall()
