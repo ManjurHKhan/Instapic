@@ -391,7 +391,7 @@ def search():
                     timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
-                query = "SELECT * FROM posts WHERE date <= %s LIMIT %d;"
+                query = "SELECT * FROM posts WHERE date <= %s LIMIT %s;"
                 try:
                     logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
