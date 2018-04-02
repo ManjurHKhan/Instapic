@@ -80,8 +80,8 @@ def adduser():
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
-                    query = "SELECT * FROM USERS where username='%s' or email='%s';"%(username,email)
-                    cur.execute(query)
+                    query = "SELECT * FROM USERS where username=%s or email=%s;"
+                    cur.execute(query, (username,email,))
                     logger.debug('adduser: fetching if username or email exists')
 
                     res = cur.fetchone()
@@ -90,7 +90,7 @@ def adduser():
 
                     if (res == None):
                         logger.debug('adduser: Starting to insert things into the table :D with %s', res)
-                        query = "INSERT INTO USERS (username,password,email,salt) VALUES ('%s','%s','%s','%s');";
+                        query = "INSERT INTO USERS (username,password,email,salt) VALUES (%s,%s,%s,%s);";
                         
                         # Generate salt and hash the password
                         salty= base64.b64encode(os.urandom(10)).decode()[:SHA256_SALT_SIZE]
@@ -154,8 +154,8 @@ def login():
     user_cookie = session.get("userID")
     if (user_cookie != None):
         cur = conn.cursor()
-        query = "SELECT username FROM USERS where username='%s' and validated is True"%(user_cookie)
-        cur.execute(query)
+        query = "SELECT username FROM USERS where username='%s' and validated is True;"
+        cur.execute(query, (user_cookie,))
         rez = cur.fetchone()
         if rez != None:
             # login
@@ -178,7 +178,7 @@ def login():
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
-                    query = "SELECT salt, password, username FROM USERS where username=%s and validated is True"
+                    query = "SELECT salt, password, username FROM USERS where username=%s and validated is True;"
                     cur.execute(query, (username,))
                     # there should be only one  - we did all proper checks in add users, so hopefully there is only one
                     res = cur.fetchone()
@@ -256,14 +256,14 @@ def verify():
                 else:
                     username = rez[0]
                     logger.debug("verify: Username: %s,"%(username))
-                    query = "SELECT * FROM validate where username=%s and validkey=%s"
+                    query = "SELECT * FROM validate where username=%s and validkey=%s;"
 
                     cur.execute(query, (username,key,))
                     rez = cur.fetchone()
                     if (rez == None):
                         return jsonify(status="error", error="Invalid Verify inputs.")
 
-                    query = "UPDATE users set validated=True where username=%s and validated is False"
+                    query = "UPDATE users set validated=True where username=%s and validated is False;"
                     
                     cur.execute(query, (username,))
 
@@ -309,7 +309,7 @@ def add_items():
                     logger.debug('conn:%s', conn)
                     cur = conn.cursor()
                     content = content.replace("'", "''").encode('UTF-8')
-                    query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %r)"
+                    query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %r);"
                     logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                     cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', ))
                     cur.close()
@@ -340,7 +340,7 @@ def get_item(id):
         try:
             logger.debug('conn:%s', conn)
             cur = conn.cursor()
-            query = "SELECT * FROM posts WHERE postid = %s"
+            query = "SELECT * FROM posts WHERE postid = %s;"
             logger.debug("get item query:%s", query % (str(id)))
             cur.execute(query, (str(id), ))
             i = cur.fetchone()
@@ -391,7 +391,7 @@ def search():
                     timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
-                query = "SELECT * FROM posts WHERE date <= %s LIMIT %d"
+                query = "SELECT * FROM posts WHERE date <= %s LIMIT %d;"
                 try:
                     logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
@@ -431,7 +431,7 @@ def del_item(id):
             # we should validate the cookie here...
 
             cur = conn.cursor()
-            query="DELETE FROM posts where postid = %s"
+            query="DELETE FROM posts where postid = %s;"
             logger.debug("delete query %s", query % (str(id)))
             cur.execute(query, (str(id), )) 
             cur.close()
@@ -457,7 +457,7 @@ def user_followers(username):
         if (user_cookie != None):
             cur = conn.cursor()
             # check to make sure user is in the database
-            query = "SELECT username FROM USERS where username=%s and validated is True"
+            query = "SELECT username FROM USERS where username=%s and validated is True;"
             cur.execute(query, (user_cookie,))
             rez = cur.fetchone()
             if rez == None:
@@ -470,7 +470,7 @@ def user_followers(username):
             ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT username FROM followers where follows=%s LIMIT %d"
+            query = "SELECT username FROM followers where follows=%s LIMIT %d;"
             cur.execute(query, (username, limit, ))
             rez = cur.fetchall()
             followers = [y for row in rez for y in row]
@@ -492,7 +492,7 @@ def users_user_is_following(username):
         if (user_cookie != None):
             cur = conn.cursor()
             # check to make sure user is in the database
-            query = "SELECT username FROM USERS where username=%s and validated is True"
+            query = "SELECT username FROM USERS where username=%s and validated is True;"
             cur.execute(query, (user_cookie,))
             rez = cur.fetchone()
             if rez == None:
@@ -505,7 +505,7 @@ def users_user_is_following(username):
             ll = request.args.get("limit")
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
-            query = "SELECT follows FROM followers where username=%s LIMIT %d"
+            query = "SELECT follows FROM followers where username=%s LIMIT %d;"
             logger.debug(query)
             cur.execute(query, (username, limit,))
             rez = cur.fetchall()
@@ -527,7 +527,7 @@ def user_follow():
         if (user_cookie != None):
             cur = conn.cursor()
             # check to make sure user is in the database
-            query = "SELECT username FROM USERS where username=%s and validated is True"
+            query = "SELECT username FROM USERS where username=%s and validated is True;"
             cur.execute(query, (user_cookie, ))
             rez = cur.fetchone()
             if rez == None:
@@ -549,7 +549,7 @@ def user_follow():
                 if (username != None and username != user_cookie):
                     #validate the username
                     cur = conn.cursor()
-                    query = "SELECT username FROM USERS where username=%s and validated is True"
+                    query = "SELECT username FROM USERS where username=%s and validated is True;"
                     cur.execute(query, (username,))
                     rez = cur.fetchone()
                     if rez == None:
@@ -560,12 +560,14 @@ def user_follow():
 
                     if (follow):
                         #Following
-                        query = "INSERT INTO followers (username, follows) VALUES(%s,%s) "
-                        cur.execute(query, (user_cookie, username,))
+                        query = "INSERT INTO followers (username, follows) VALUES('%s' , '%s');" % (user_cookie, username)
+                        logger.debug(query) # also why did loggin not work
+                        # cur.execute(query, (user_cookie, username,))
+                        cur.execute(query)
                         #query = "INSERT INTO following (username, following) VALUES('%s','%s') " % (username, user_cookie)
                         #cur.execute(query) 
                     else:
-                        query = "DELETE FROM followers WHERE username=%s and follows=%s"
+                        query = "DELETE FROM followers WHERE username=%s and follows=%s;"
                         cur.execute(query, (user_cookie, username,)) 
                         #query = "DELETE FROM follows WHERE username='%s' and follow='%s'"%(username, user_cookie )
                         #cur.execute(query)
