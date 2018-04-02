@@ -376,10 +376,11 @@ def search():
     conn = None
     curr = None
     user_cookie = session.get("userID")
+    logger.debug("-- search user cookie : %s", user_cookie)
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
-            logger.debug('%s username -- search data:%s' % (user_cookie, data))
+            logger.debug('search data:%s', data)
 
             if (data != None):
                 limit = 25
