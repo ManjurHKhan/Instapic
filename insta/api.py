@@ -560,10 +560,9 @@ def user_follow():
 
                     if (follow):
                         #Following
-                        query = "INSERT INTO followers (username, follows) VALUES('%s' , '%s');" % (user_cookie, username)
-                        logger.debug(query) # also why did loggin not work
-                        # cur.execute(query, (user_cookie, username,))
-                        cur.execute(query)
+                        query = "INSERT INTO followers (username, follows) VALUES('%s' , '%s');"
+                        logger.debug("query: %s", query % (user_cookie, username))
+                        cur.execute(query, (user_cookie, username,))
                         #query = "INSERT INTO following (username, following) VALUES('%s','%s') " % (username, user_cookie)
                         #cur.execute(query) 
                     else:
