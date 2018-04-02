@@ -287,7 +287,7 @@ def add_items():
     conn = psycopg2.connect(**params)
     curr = None
     user_cookie = session.get("userID")
-    logger.debug("current user: %s", user_cookie)
+    # logger.debug("current user: %s", user_cookie)
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
@@ -306,11 +306,11 @@ def add_items():
                         return jsonify(status="error", error="Content is null")
                     postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
                 
-                    logger.debug('conn:%s', conn)
+                    # logger.debug('conn:%s', conn)
                     cur = conn.cursor()
                     # content = content.replace("'", "''").encode('UTF-8')
                     query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %s);"
-                    logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
+                    # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                     cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', ))
                     cur.close()
                     conn.commit()
