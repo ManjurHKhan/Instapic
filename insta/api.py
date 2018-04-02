@@ -291,6 +291,7 @@ def add_items():
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
+
             if(data != None):
                 try:
                     content = None
@@ -306,6 +307,9 @@ def add_items():
                         return jsonify(status="error", error="Content is null")
                     postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
                 
+                    logger.debug('additem-content 1: %s',data['content'])
+                    logger.debug('additem-content 2: %s',content)
+
                     # logger.debug('conn:%s', conn)
                     cur = conn.cursor()
                     # content = content.replace("'", "''").encode('UTF-8')
