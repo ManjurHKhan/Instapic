@@ -105,7 +105,7 @@ def adduser():
                         logger.debug(val_key, "is this good? ", len(val_key))
 
                         logger.debug(query%(username,passwd,email,salty))
-                        cur.execute(query%(username,passwd,email,salty))
+                        cur.execute(query, (username,passwd,email,salty,))
 
                         query = "INSERT INTO VALIDATE (username,validkey) VALUES (%s,%s);"
                         cur.execute(query, (username, val_key,))
@@ -570,7 +570,7 @@ def user_follow():
                         cur.execute(query, (user_cookie, username,)) 
                         #query = "DELETE FROM follows WHERE username='%s' and follow='%s'"%(username, user_cookie )
                         #cur.execute(query)
-                    cur.execute(query)
+                    # cur.execute(query)
                     cur.close()
                     conn.commit()
                     conn.close()
