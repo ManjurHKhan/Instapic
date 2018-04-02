@@ -419,7 +419,8 @@ def search():
                     
                 query += "LIMIT %s;"
                 q_data += (limit,)
-                logger.debug("search query %s", query % (q_data))
+                logger.debug("search query with data %s", query % (q_data))
+                logger.debug("search query %s", query)
 
                 try:
                     conn = psycopg2.connect(**params)
@@ -428,6 +429,7 @@ def search():
                     # logger.debug('search posts query:%s', query % (timestamp, limit))
                     cur.execute(query, q_data)
                     items = cur.fetchall()
+                    logger.debug("search item response %s" % (items))
                     if items == None:
                         logger.debug("NONE fetch for query %s" % (query))
                         return jsonify(status="OK",  items=[])
@@ -482,7 +484,7 @@ def del_item(id):
 def user_info(username):
     try:
         conn = psycopg2.connect(**params)
-        logger.debug('search conn:%s', conn)
+        logger.debug('user/username conn:%s', conn)
         cur = conn.cursor()
 
         ret_user = {'email':None, followers:0, following:0}
