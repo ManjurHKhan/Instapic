@@ -561,15 +561,14 @@ def user_follow():
                     if (follow):
                         #Following
                         query = "INSERT INTO followers (username, follows) VALUES(%s,%s) "
-                        # cur.execute(query)
+                        cur.execute(query, (user_cookie, username,))
                         #query = "INSERT INTO following (username, following) VALUES('%s','%s') " % (username, user_cookie)
                         #cur.execute(query) 
                     else:
-                        query = "DELETE FROM followers WHERE username='%s' and follows='%s'"%(user_cookie, username)
-                        #cur.execute(query) 
+                        query = "DELETE FROM followers WHERE username=%s and follows=%s"
+                        cur.execute(query, (user_cookie, username,)) 
                         #query = "DELETE FROM follows WHERE username='%s' and follow='%s'"%(username, user_cookie )
                         #cur.execute(query)
-
                     cur.execute(query)
                     cur.close()
                     conn.commit()
