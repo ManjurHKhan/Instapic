@@ -414,9 +414,9 @@ def search():
                     q_string = "%%%s%%" % (data["q"])
                     query += "AND content = %s "
                     q_data += (q_string,)
-                if username == None and not following:
-                    query += "AND username = %s "
-                    q_data += (user_cookie,)
+                # if username == None and not following:
+                #     query += "AND username = %s "
+                #     q_data += (user_cookie,)
                     
                 if following:
                     query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) "
