@@ -481,6 +481,12 @@ def user_info(username):
         user_cookie = session.get("userID")
         if (user_cookie != None):
             query = "SELECT * FROM USERS"
+    except Exception as e:
+        logger.debug('users_user_is_following: error  %s', e)
+        logger.debug(traceback.format_exc())
+        return jsonify(status="error", error="item not deleted....")
+    return jsonify(status="error", error="did not finish this yet")
+
 @mod.route("/user/<username>/followers", methods=["GET"])
 def user_followers(username):
     try:
