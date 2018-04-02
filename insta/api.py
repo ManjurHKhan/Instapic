@@ -452,10 +452,10 @@ def del_item(id):
         conn = psycopg2.connect(**params)
         cur = None
         user_cookie = session.get("userID")
-        user_cookie = "dummy user"
+        # user_cookie = "dummy user"
         if (user_cookie != None):
             # we should validate the cookie here...
-            if(query)
+            
             cur = conn.cursor()
             query="DELETE FROM posts where postid = %s;"
             logger.debug("delete query %s", query % (str(id)))
