@@ -409,7 +409,7 @@ def search():
                     q_string = "%%%s%%" % (data["q"])
                     query += "AND content = %s "
                     q_data += (q_string,)
-                if username == None and !following:
+                if username == None and  not following:
                     query += "AND username = %s "
                     q_data += (user_cookie,)
                     
