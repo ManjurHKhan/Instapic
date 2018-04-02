@@ -314,6 +314,7 @@ def add_items():
                     cur = conn.cursor()
                     # content = content.replace("'", "''").encode('UTF-8')
                     query = "INSERT INTO posts(username, postid, content, retweet) VALUES (%s, %s, %s, %s);"
+                    logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, child_type == 'retweet', ))
                     # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                     cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', ))
                     cur.close()
