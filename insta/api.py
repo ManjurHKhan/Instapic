@@ -412,7 +412,7 @@ def search():
                 
                 if "q" in data:
                     q_string = "%%%s%%" % (data["q"])
-                    query += "AND content = %s "
+                    query += "AND content LIKE %s "
                     q_data += (q_string,)
                 # if username == None and not following:
                 #     query += "AND username = %s "
