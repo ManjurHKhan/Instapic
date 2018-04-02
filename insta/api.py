@@ -330,7 +330,7 @@ def add_items():
     return jsonify(status="error", error="Not logged in")
 
 
-@mod.route("/item/<id>", methods=["POST"])
+@mod.route("/item/<id>", methods=["GET"]) # IDK why this was POST
 def get_item(id):
     conn = psycopg2.connect(**params)
     curr = None
@@ -373,7 +373,7 @@ def get_item(id):
 
 @mod.route("/search", methods=["POST"])
 def search():
-    conn = psycopg2.connect(**params)
+    conn = None
     curr = None
     user_cookie = session.get("userID")
     if (user_cookie != None):
@@ -391,12 +391,38 @@ def search():
                     timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
                 timestamp = time.ctime(timestamp)
 
-                query = "SELECT * FROM posts WHERE date <= %s LIMIT %s;"
+                username = None
+                q_string = None
+                following = True
+                q_data = (timestamp,)
+                query = "SELECT * FROM posts WHERE date <= %s "
+                if "username" in data:
+                    username = data["username"]
+                    query += "AND username = %s "
+                    q_data += (username,)
+                
+                if "following" in data:
+                    following = data["following"]
+                
+                if "q" in data:
+                    q_string = "%%%s%%" % (data["q"])
+                    query += "AND content = %s "
+                    q_data += (q_string,)
+
+                if following:
+                    query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) "
+                    q_data += (user_cookie,)
+                query += "LIMIT %s;"
+                q_data += (limit,)
+                logger.debug("search query %s", query)
+                logger.debug("q_data %s", str(q_data))
+
                 try:
+                    conn = psycopg2.connect(**params)
                     logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
-                    logger.debug('search posts query:%s', query % (timestamp, limit))
-                    cur.execute(query, (timestamp, limit,))
+                    # logger.debug('search posts query:%s', query % (timestamp, limit))
+                    cur.execute(query, q_data)
                     items = cur.fetchall()
                     if items == None:
                         return jsonify(status="OK",  items=[])
@@ -429,7 +455,7 @@ def del_item(id):
         user_cookie = "dummy user"
         if (user_cookie != None):
             # we should validate the cookie here...
-
+            if(query)
             cur = conn.cursor()
             query="DELETE FROM posts where postid = %s;"
             logger.debug("delete query %s", query % (str(id)))
@@ -448,6 +474,13 @@ def del_item(id):
 
 
 @mod.route("/user/<username>", methods=["GET"])
+def user_info(username):
+    try:
+        conn = None
+        curr = None
+        user_cookie = session.get("userID")
+        if (user_cookie != None):
+            query = "SELECT * FROM USERS"
 @mod.route("/user/<username>/followers", methods=["GET"])
 def user_followers(username):
     try:
@@ -457,7 +490,7 @@ def user_followers(username):
         if (user_cookie != None):
             cur = conn.cursor()
             # check to make sure user is in the database
-            query = "SELECT username FROM USERS where username=%s and validated is True;"
+            query = "SELECT username FROM users where username=%s and validated is True;"
             cur.execute(query, (user_cookie,))
             rez = cur.fetchone()
             if rez == None:
