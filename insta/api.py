@@ -14,6 +14,8 @@ import smtplib
 
 ## debugging tools
 import traceback
+
+
 # TODO we have to do something about the conn. We should really call it only inside try.
 ######################
 ### Set up Logging ###
@@ -44,13 +46,10 @@ logger.addHandler(fh)
 
 mod = Blueprint("api", __name__)
 
-
 SHA256_SALT_SIZE=5
 VAL_KEY_SIZE=10
 
-
 params = config()
-
 
 @mod.route("/")
 def hello():
@@ -656,5 +655,6 @@ def user_follow():
         logger.error('follow: Error  %s', e)
         logger.debug(traceback.format_exc())
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
+
 
                    
