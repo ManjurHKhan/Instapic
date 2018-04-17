@@ -329,10 +329,6 @@ def add_items():
                         # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                         cur.execute(query, (user_cookie, postid, content, child_type, ))
 
-
-
-
-
                     if "media" in data:
                         media = data["media"]
                         # Making sure if media exists first
@@ -368,23 +364,18 @@ def get_item(id):
         try:
             logger.debug('conn:%s', conn)
             cur = conn.cursor()
-            query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts INNER JOIN user_media ON posts.postid = user_media.postid WHERE posts.postid = %s;"
+            query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts FULL OUTER JOIN user_media ON posts.postid = user_media.postid WHERE posts.postid = %s;"
             logger.debug("get item query:%s", query % (str(id)))
             cur.execute(query, (str(id), ))
             items = cur.fetchall()
             media = []
-            print (items)
             if len(items) == 0:
-                query = "SELECT username, postid, date, content,  child_type, parent_id, retweet_cnt, numliked FROM posts WHERE postid = %s;"
-                cur.execute(query, (str(id), ))
-
-                items = cur.fetchall()
-                if len(items) == 0:
-                    cur.close()
-                    conn.close()
-                    return jsonify(status="error", error = "Item not Found")
-            else:
-                for it in items: 
+                cur.close()
+                conn.close()
+                return jsonify(status="error", error = "Item not Found")
+           
+            for it in items: 
+                if it[8] != None:
                     media.append(it[8])
             i = items[0]    
             item = {'id':i[1], 
@@ -444,7 +435,10 @@ def search():
                 q_string = None
                 following = True
                 q_data = (timestamp,)
-                query = "SELECT * FROM posts WHERE date <= %s "
+                #select * from posts FULL OUTER JOIN user_media on posts.postid = user_media.postid;
+                #posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid
+                #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
+                query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts FULL OUTER JOIN user_media on posts.postid = user_media.postid WHERE date <= %s "
                 if "username" in data:
                     username = data["username"]
                     query += "AND username = %s "
@@ -484,7 +478,7 @@ def search():
                 #     q_data += (user_cookie,)
                     
                 if following:
-                    query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) "
+                    query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) ORDER BY posts.postid; "
                     q_data += (user_cookie,)
                     
                 query += "LIMIT %s;"
@@ -504,8 +498,39 @@ def search():
                         logger.debug("NONE fetch for query %s" % (query))
                         return jsonify(status="OK",  items=[])
                     ret_items = []
+
+                    i = items[0]
+                    d = {'id':i[1],
+                        'username':i[0], 
+                        'property':{'likes':i[7]}, 
+                        'retweeted':i[6], 
+                        'content':i[3], 
+                        'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
+                        'childType':i[4], 
+                        'parent':i[5]
+                    }
+                    current = d['id']
+                    media = [] 
+                    items.append(None) # just a footer to indicate end of items reached 
                     for i in items:
-                        ret_items.append({'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S')))})
+                        if i == None or i[1] != current:
+                            d["media"] = media
+                            ret_items.append(d)
+                            if i != None:
+                                # clear media and make new d
+                                media = [] 
+                                d = {'id':i[1],
+                                    'username':i[0], 
+                                    'property':{'likes':i[7]}, 
+                                    'retweeted':i[6], 
+                                    'content':i[3], 
+                                    'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
+                                    'childType':i[4], 
+                                    'parent':i[5]
+                                }                             
+                        else:
+                            if i[8] != None:
+                                media.append(i[8])
                     cur.close()
                     conn.commit()
                     conn.close()
