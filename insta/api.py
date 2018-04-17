@@ -473,7 +473,6 @@ def search():
                 if "rank" in data:
                     rank = data["rank"].rstrip()
                     if rank == "time":
-                        print ("TIME\n\n")
                         rank_order = "posts.date DESC"
 
                     elif rank == "interest":
@@ -494,7 +493,7 @@ def search():
                 if "replies" in data:
                     if data["replies"].rstrip().capitalize()=="False":
                         
-                        miniquery += "AND childType <> %s "
+                        miniquery += "AND child_type != %s "
                         q_data += ("reply",)
                
 
@@ -518,15 +517,15 @@ def search():
                 miniquery += " LIMIT %s"
                 q_data += (limit,)
 
-                print (query)
-                print ()
+                # print (query)
+                # print ()
                 
-                print (miniquery)
-                print ()
+                # print (miniquery)
+                # print ()
                 query = query % miniquery + joinquery + order_query
 
-                print (query)
-                print (q_data)
+                # print (query)
+                # print (q_data)
 
                 logger.debug("search query with data %s", query % (q_data))
                 logger.debug("search query %s", query)
@@ -539,9 +538,8 @@ def search():
                     cur.execute(query, q_data)
                     
                     items = cur.fetchall()
-                    print (items)
                     logger.debug("search item response %s" % (items))
-                    if items == None:
+                    if len(items) == 0:
                         logger.debug("NONE fetch for query %s" % (query))
                         return jsonify(status="OK",  items=[])
                     ret_items = []
@@ -563,7 +561,6 @@ def search():
                     current = d['id']
                     media = [] 
                     items.append(None) # just a footer to indicate end of items reached 
-                    print (items)
 
                     for i in items:
                         if i == None or i[1] != current:
@@ -602,7 +599,6 @@ def search():
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection error while searching for items")
-        conn.close()
         return jsonify(status="error", error="Data not valid")
     conn.close()
     return jsonify(status="error", error="User not logged in")
