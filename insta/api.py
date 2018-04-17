@@ -329,7 +329,7 @@ def add_items():
                         query = "INSERT INTO posts(username, postid, content) VALUES (%s, %s, %s);"
                         logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
                         # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
-                        cur.execute(query, (user_cookie, postid, content, child_type, ))
+                        cur.execute(query, (user_cookie, postid, content, ))
 
                     if "media" in data:
                         media = data["media"]
