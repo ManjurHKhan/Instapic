@@ -321,8 +321,6 @@ def add_items():
                         if child_type == "retweet":
                             query2 ="UPDATE posts set retweet_cnt = retweet_cnt+1 where postid=%s;"
                             cur.execute(query2, ( parent,))
-                        else:
-                            print (child_type, "hello")
                     else:
                         #logger.debug('additem-content 1: %s',data['content'])
                         #logger.debug('additem-content 2: %s',content)
@@ -337,8 +335,6 @@ def add_items():
 
                     if "media" in data:
                         media = data["media"]
-                        print (media)
-                        print (media[0])
                         # Making sure if media exists first
                         # Skipping to save time
                         for mediaid in media:
@@ -368,7 +364,6 @@ def get_item(id):
     conn = psycopg2.connect(**params)
     curr = None
     user_cookie = session.get("userID")
-    print(user_cookie)
     if (user_cookie != None):
         try:
             logger.debug('conn:%s', conn)
@@ -381,21 +376,11 @@ def get_item(id):
                 cur.close()
                 conn.close()
                 return jsonify(status="error", error = "Item not Found")
-            # logger.debug("get_item - time: %s", i[2])
-            # logger.debug("get_item -", (i[2].split('.')))
-            # logger.debug("get_item -", (str(i[2]).split('.')))
-            # logger.debug("get_item -", int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%dT%H:%M:%S'))))
-            print(i)
 
             item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))), 'childType':i[4], 'parent':i[5] }
             query="SELECT mediaid from user_media where username=%s and postid=%s;";
-            print (query, (user_cookie, str(id)))
             cur.execute(query, (user_cookie, str(id),) )   
             rez = cur.fetchall()
-            print (query)
-            print (rez)
-
-
             cur.close()
             conn.commit()
             conn.close()
@@ -525,13 +510,12 @@ def del_item(id):
         # user_cookie = "dummy user"
         if (user_cookie != None):
             # we should validate the cookie here...
-            
             cur = conn.cursor()
             query="DELETE FROM posts where postid = %s RETURNING child_type, parent_id ;"
             logger.debug("delete query %s", query % (str(id)))
             cur.execute(query, (str(id), )) 
             rez = cur.fetchone()
-            print (rez, "testing delete post - checking child_types")
+
             if rez != None and len(rez) > 0 and rez[0] == "retweet":
                 query2 ="UPDATE posts set retweet_cnt = retweet_cnt-1 where username=%s and postid=%s;"
                 cur.execute(query2, (user_cookie, rez[1],))
