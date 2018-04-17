@@ -438,10 +438,22 @@ def search():
                 #select * from posts FULL OUTER JOIN user_media on posts.postid = user_media.postid;
                 #posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid
                 #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
-                query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts FULL OUTER JOIN user_media on posts.postid = user_media.postid WHERE date <= %s "
+                query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM (%s) as posts "
+                
+                endquery = "%s user_media on posts.postid = user_media.postid "
+                if "hasMedia" in data:
+                    hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
+                    endquery = endquery %("INNER JOIN")
+                else:
+                    endquery = endquery %("FULL OUTER JOIN")
+
+                miniquery = "SELECT * FROM posts "
+                
+                miniquery += "WHERE date <= %s "
+
                 if "username" in data:
                     username = data["username"]
-                    query += "AND username = %s "
+                    miniquery += "AND username = %s "
                     q_data += (username,)
                 
                 if "following" in data:
@@ -449,14 +461,22 @@ def search():
                 
                 if "q" in data:
                     q_string = "%%%s%%" % (data["q"])
-                    query += "AND content LIKE %s "
+                    miniquery += "AND content LIKE %s "
                     q_data += (q_string,)
-                
-                # if "rank" in data:
-                #     if data["hasMedia"].rstrip().capitalize()=="True":
-                #         q_string = "%%%s%%" % (data["q"])
-                #         query += "AND content LIKE %s "
-                #         q_data += (q_string,)
+                rank_order = ""
+                if "rank" in data:
+                    rank = data["rank"].rstrip()
+                    if rank == "time":
+                        print ("TIME\n\n")
+                        rank_order = "posts.date DESC"
+
+                    elif rank == "interest":
+                        rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+                    else:
+                        return jsonify(status="error", error="invalid Rank type passed in")
+                else:
+                    rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+
                 #  if "parent" in data:
                 #     if data["parent"].rstrip() != None:
                 #         q_string = "%%%s%%" % (data["q"])
@@ -478,11 +498,26 @@ def search():
                 #     q_data += (user_cookie,)
                     
                 if following:
-                    query += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) ORDER BY posts.postid; "
+                    miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) ; "
                     q_data += (user_cookie,)
-                    
-                query += "LIMIT %s;"
+               
+                order_query = "ORDER BY " + rank_order  + ", posts.postid"
+
+                # miniquery += order_query
+
+                miniquery += " LIMIT %s"
                 q_data += (limit,)
+
+                print (query)
+                print ()
+                
+                print (miniquery)
+                print ()
+                query = query % miniquery + endquery + order_query
+
+                print (query)
+                print (q_data)
+
                 logger.debug("search query with data %s", query % (q_data))
                 logger.debug("search query %s", query)
 
@@ -492,7 +527,9 @@ def search():
                     cur = conn.cursor()
                     # logger.debug('search posts query:%s', query % (timestamp, limit))
                     cur.execute(query, q_data)
+                    
                     items = cur.fetchall()
+                    print (items)
                     logger.debug("search item response %s" % (items))
                     if items == None:
                         logger.debug("NONE fetch for query %s" % (query))
@@ -512,6 +549,8 @@ def search():
                     current = d['id']
                     media = [] 
                     items.append(None) # just a footer to indicate end of items reached 
+                    print (items)
+
                     for i in items:
                         if i == None or i[1] != current:
                             d["media"] = media
@@ -519,6 +558,8 @@ def search():
                             if i != None:
                                 # clear media and make new d
                                 media = [] 
+                                if i[8] != None:
+                                    media.append(i[8])
                                 d = {'id':i[1],
                                     'username':i[0], 
                                     'property':{'likes':i[7]}, 
@@ -527,7 +568,9 @@ def search():
                                     'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
                                     'childType':i[4], 
                                     'parent':i[5]
-                                }                             
+                                }
+                                current = i[1]
+
                         else:
                             if i[8] != None:
                                 media.append(i[8])
