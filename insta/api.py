@@ -368,19 +368,41 @@ def get_item(id):
         try:
             logger.debug('conn:%s', conn)
             cur = conn.cursor()
-            query = "SELECT username, postid, date, content,  child_type, parent_id, retweet_cnt, numliked FROM posts WHERE postid = %s;"
+            query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts INNER JOIN user_media ON posts.postid = user_media.postid WHERE posts.postid = %s;"
             logger.debug("get item query:%s", query % (str(id)))
             cur.execute(query, (str(id), ))
-            i = cur.fetchone()
-            if i == None:
-                cur.close()
-                conn.close()
-                return jsonify(status="error", error = "Item not Found")
+            items = cur.fetchall()
+            media = []
+            print (items)
+            if len(items) == 0:
+                query = "SELECT username, postid, date, content,  child_type, parent_id, retweet_cnt, numliked FROM posts WHERE postid = %s;"
+                cur.execute(query, (str(id), ))
 
-            item = {'id':i[1], 'username':i[0], 'property':{'likes':i[7]}, 'retweeted':i[6], 'content':i[3], 'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))), 'childType':i[4], 'parent':i[5] }
-            query="SELECT mediaid from user_media where username=%s and postid=%s;";
-            cur.execute(query, (user_cookie, str(id),) )   
-            rez = cur.fetchall()
+                items = cur.fetchall()
+                if len(items) == 0:
+                    cur.close()
+                    conn.close()
+                    return jsonify(status="error", error = "Item not Found")
+            else:
+                for it in items: 
+                    media.append(it[8])
+            i = items[0]    
+            item = {'id':i[1], 
+                    'username':i[0], 
+                    'property':
+                        {
+                            'likes':i[7]
+                        }, 
+                    'retweeted':i[6],
+                    'content':i[3],
+                    'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))), 
+                    'childType':i[4], 
+                    'parent':i[5], 
+                    'media':media
+                 }
+            # query="SELECT mediaid from user_media where username=%s and postid=%s;";
+            # cur.execute(query, (user_cookie, str(id),) )   
+            # rez = cur.fetchall()
             cur.close()
             conn.commit()
             conn.close()
@@ -596,7 +618,6 @@ def user_followers(username):
             cur.execute(query, (username, limit, ))
             rez = cur.fetchall()
             followers = [y for row in rez for y in row]
-            print (rez)
             return jsonify(status="OK",users=followers)
 
     except Exception as e:
