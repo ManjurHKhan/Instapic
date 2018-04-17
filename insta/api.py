@@ -311,17 +311,29 @@ def add_items():
                     cur = conn.cursor()
                     parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
                     
+                    if parent == None and child_type != None: 
+                        return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
+
                     if parent != None:
                         query = "INSERT INTO posts(username, postid, content, child_type, parent_id) VALUES (%s, %s, %s, %s,%s);"
                         cur.execute(query, (user_cookie, postid, content, child_type, parent ))
                         #cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', parent ))
+                        if child_type == "retweet":
+                            query2 ="UPDATE posts set retweet_cnt = retweet_cnt+1 where postid=%s;"
+                            cur.execute(query2, ( parent,))
+                        else:
+                            print (child_type, "hello")
                     else:
                         #logger.debug('additem-content 1: %s',data['content'])
                         #logger.debug('additem-content 2: %s',content)
-                        query = "INSERT INTO posts(username, postid, content, child_type) VALUES (%s, %s, %s, %s);"
-                        logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, child_type, ))
+                        query = "INSERT INTO posts(username, postid, content) VALUES (%s, %s, %s);"
+                        logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
                         # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
                         cur.execute(query, (user_cookie, postid, content, child_type, ))
+
+
+
+
 
                     if "media" in data:
                         media = data["media"]
@@ -515,9 +527,14 @@ def del_item(id):
             # we should validate the cookie here...
             
             cur = conn.cursor()
-            query="DELETE FROM posts where postid = %s;"
+            query="DELETE FROM posts where postid = %s RETURNING child_type, parent_id ;"
             logger.debug("delete query %s", query % (str(id)))
             cur.execute(query, (str(id), )) 
+            rez = cur.fetchone()
+            print (rez, "testing delete post - checking child_types")
+            if rez != None and len(rez) > 0 and rez[0] == "retweet":
+                query2 ="UPDATE posts set retweet_cnt = retweet_cnt-1 where username=%s and postid=%s;"
+                cur.execute(query2, (user_cookie, rez[1],))
             cur.close()
             conn.commit()
             conn.close()
@@ -736,14 +753,9 @@ def post_like(id):
                     #query = "UPDATE posts set numliked = (select count(*) from likes where username=%s and postid =%s);"
                     cur.execute(query, (user_cookie, post_id,))
                 else: 
-                    # query = "SELECT * FROM likes where username=%s and postid=%s;"
-                    # cur.execute(query, (user_cookie, post_id,))
-                    # rez = cur.fetchone()
-                    # if rez != None and len(rez) > 0:
+                    # Unlike
                     query = "DELETE FROM likes where username=%s and postid=%s RETURNING *"
-                    #" and exists(select * from likes where username=%s and postid=%s );"
                     cur.execute(query, (user_cookie, post_id,))
-                    #cur.execute(query, (user_cookie, post_id,user_cookie, post_id,))
                     rez = cur.fetchall()
                     if len(rez) > 0: 
                         query = "UPDATE posts set numliked = numliked-1 where username=%s and postid=%s;"
