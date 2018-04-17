@@ -768,39 +768,39 @@ def post_like(id):
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 
-@mod.route("/media/<id>", methods=["GET"])
-def get_media(id):
-    domain_get_media = urltoFiles + "/%s"%(id)
-    resp = requests.request(
-        method=request.method,
-        url=request.url.replace('old-domain.com', urltoFiles),
-        headers={key: value for (key, value) in request.headers if key != 'Host'},
-        data=request.get_data(),
-        cookies=request.cookies,
-        allow_redirects=False)
+# @mod.route("/media/<id>", methods=["GET"])
+# def get_media(id):
+#     domain_get_media = urltoFiles + "/%s"%(id)
+#     resp = requests.request(
+#         method=request.method,
+#         url=request.url.replace('old-domain.com', urltoFiles),
+#         headers={key: value for (key, value) in request.headers if key != 'Host'},
+#         data=request.get_data(),
+#         cookies=request.cookies,
+#         allow_redirects=False)
 
-    # forward request to the file storage machine
-    pass
+#     # forward request to the file storage machine
+#     pass
 
-@mod.route("/addmedia", methods=["POST"])
-def add_media():
-    try:
-        conn = psycopg2.connect(**params)
-        cur = None
-        user_cookie = session.get("userID")
-        if (user_cookie != None):
-            cur = conn.cursor()
-            # check to make sure user is in the database
-            query = "SELECT username FROM USERS where username=%s and validated is True;"
-            cur.execute(query, (user_cookie, ))
-            rez = cur.fetchone()
-        #forward request to the file storage machine
-        query = "INSERT INTO media (username, mediaid) VALUES (%s, %s);"
-        cur.execute(query, (user_cookie, mediaid,))
-    except Exception as e:
-        logger.error('addmedia: Error  %s', e)
-        logger.debug(traceback.format_exc())
-        return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
+# @mod.route("/addmedia", methods=["POST"])
+# def add_media():
+#     try:
+#         conn = psycopg2.connect(**params)
+#         cur = None
+#         user_cookie = session.get("userID")
+#         if (user_cookie != None):
+#             cur = conn.cursor()
+#             # check to make sure user is in the database
+#             query = "SELECT username FROM USERS where username=%s and validated is True;"
+#             cur.execute(query, (user_cookie, ))
+#             rez = cur.fetchone()
+#         #forward request to the file storage machine
+#         query = "INSERT INTO media (username, mediaid) VALUES (%s, %s);"
+#         cur.execute(query, (user_cookie, mediaid,))
+#     except Exception as e:
+#         logger.error('addmedia: Error  %s', e)
+#         logger.debug(traceback.format_exc())
+#         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
     
 
