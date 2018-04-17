@@ -440,20 +440,26 @@ def search():
                 #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
                 query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM (%s) as posts "
                 
-                endquery = "%s user_media on posts.postid = user_media.postid "
+                joinquery = "%s user_media on posts.postid = user_media.postid "
+                secretjoin = "FULL OUTER JOIN"
+                miniquery = "SELECT username, postid, date, content, child_type, parent_id, retweet_cnt, numliked, COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum from posts "
                 if "hasMedia" in data:
                     hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
-                    endquery = endquery %("INNER JOIN")
+                    if hasMedia:
+                        joinquery = joinquery %("INNER JOIN") 
+                        secretjoin = "INNER JOIN"
+                        miniquery = "SELECT DISTINCT(posts.*), COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum FROM posts %s user_media on posts.postid = user_media.postid "%secretjoin
+                    else:
+                        joinquery = joinquery %("FULL OUTER JOIN")
                 else:
-                    endquery = endquery %("FULL OUTER JOIN")
+                    joinquery = joinquery %("FULL OUTER JOIN")
 
-                miniquery = "SELECT * FROM posts "
                 
                 miniquery += "WHERE date <= %s "
 
                 if "username" in data:
                     username = data["username"]
-                    miniquery += "AND username = %s "
+                    miniquery += "AND posts.username = %s "
                     q_data += (username,)
                 
                 if "following" in data:
@@ -471,22 +477,26 @@ def search():
                         rank_order = "posts.date DESC"
 
                     elif rank == "interest":
-                        rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+                        rank_order = "sum DESC"
+                        #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
                     else:
                         return jsonify(status="error", error="invalid Rank type passed in")
                 else:
-                    rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+                    rank_order = "sum DESC"
 
-                #  if "parent" in data:
-                #     if data["parent"].rstrip() != None:
-                #         q_string = "%%%s%%" % (data["q"])
-                #         query += "AND content LIKE %s "
-                #         q_data += (q_string,)
-                #  if "replies" in data:
-                #     if data["replies"].rstrip().capitalize()=="True":
-                #         q_string = "%%%s%%" % (data["q"])
-                # #         query += "AND childType <> "
-                # #         q_data += (q_string,)
+                    #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+
+                if "parent" in data:
+                    if data["parent"].rstrip() != None:
+                        parent = data["parent"]
+                        miniquery += "AND parent_id = %s "
+                        q_data += (parent,)
+                if "replies" in data:
+                    if data["replies"].rstrip().capitalize()=="False":
+                        
+                        miniquery += "AND childType <> %s "
+                        q_data += ("reply",)
+               
 
                 # if "hasMedia" in data:
                 #     if data["hasMedia"].rstrip().capitalize()=="True":
@@ -503,7 +513,7 @@ def search():
                
                 order_query = "ORDER BY " + rank_order  + ", posts.postid"
 
-                # miniquery += order_query
+                miniquery += order_query
 
                 miniquery += " LIMIT %s"
                 q_data += (limit,)
@@ -513,7 +523,7 @@ def search():
                 
                 print (miniquery)
                 print ()
-                query = query % miniquery + endquery + order_query
+                query = query % miniquery + joinquery + order_query
 
                 print (query)
                 print (q_data)
@@ -537,6 +547,10 @@ def search():
                     ret_items = []
 
                     i = items[0]
+                    while len(items) > 0 and i[1] == None:
+                        items.pop(0)
+                        i = items[0]
+
                     d = {'id':i[1],
                         'username':i[0], 
                         'property':{'likes':i[7]}, 
@@ -572,6 +586,8 @@ def search():
                                 current = i[1]
 
                         else:
+                            if i[1] == None:
+                                pass
                             if i[8] != None:
                                 media.append(i[8])
                     cur.close()
