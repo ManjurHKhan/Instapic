@@ -79,11 +79,24 @@ def send_email(email, val_key):
 def hello():
     email="koprty@gmail.com"
     val_key="123456"
-    try:
-        _thread.start_new_thread(send_email, (email, val_key ) )
-    except Exception as e:
-        logger.debug('Error on thread for email: %s', e)
-        logger.debug(traceback.format_exc())
+    mail = smtplib.SMTP('localhost')
+    #imail.ehlo()
+    #mail.starttls()
+    ouremail = "manjur.tempcse311@gmail.com"
+    #passemailcode=email_config()["password"]
+    #mail.login(ouremail,passemailcode)
+    content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
+    mail.sendmail(ouremail,email,content)
+    logger.debug('THREAD - sending mail called........ to: %s', email)
+    mail.quit()
+    logger.debug('THREAD - SENT EMAIL to: %s', email)
+    # try:
+    #     logger.debug("EMAILING with thread and dummy args:")
+
+    #     _thread.start_new_thread(send_email, (email, val_key ) )
+    # except Exception as e:
+    #     logger.debug('Error on thread for email: %s', e)
+    #     logger.debug(traceback.format_exc())
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
