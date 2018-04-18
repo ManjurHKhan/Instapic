@@ -73,6 +73,13 @@ def send_email(email, val_key):
 
 @mod.route("/")
 def hello():
+    email="koprty@gmail.com"
+    val_key="123456"
+    try:
+        _thread.start_new_thread(send_email, (email, val_key ) )
+    except Exception as e:
+        logger.debug('Error on thread for email: %s', e)
+        logger.debug(traceback.format_exc())
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
