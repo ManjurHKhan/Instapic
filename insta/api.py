@@ -127,7 +127,10 @@ def adduser():
                         logger.debug('starting validation email  %s'%(username))
 
                         # Send validation email
-                        thread.start_new_thread(send_email, (email, val_key, ) )
+                        try:
+                            thread.start_new_thread(send_email, (email, val_key, ) )
+                        except:
+                            logger.debug('Error on thread for email')
 
                         logger.debug('adduser: After mail is sent to username %s'%(username))
 
