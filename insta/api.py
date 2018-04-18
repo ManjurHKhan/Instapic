@@ -115,7 +115,7 @@ def adduser():
                         mail = smtplib.SMTP('localhost')
                         #imail.ehlo()
                         #mail.starttls()
-                        #ouremail = "manjur.tempcse311@gmail.com"
+                        ouremail = "manjur.tempcse311@gmail.com"
                         #passemailcode=email_config()["password"]
 
                         #mail.login(ouremail,passemailcode)
