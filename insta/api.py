@@ -12,7 +12,7 @@ import base64
 import time
 import smtplib
 
-import thread
+import _thread
 
 ## debugging tools
 import traceback
