@@ -121,7 +121,7 @@ def adduser():
                         #mail.login(ouremail,passemailcode)
                         content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
 
-                        mail.sendmail(ouremail,"koprty@gmail.com",content)
+                        mail.sendmail(ouremail,email,content)
                         mail.quit()
                         logger.debug('adduser: After mail is sent to username %s'%(username))
 
