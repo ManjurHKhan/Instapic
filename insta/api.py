@@ -12,6 +12,8 @@ import base64
 import time
 import smtplib
 
+import thread
+
 ## debugging tools
 import traceback
 
@@ -51,6 +53,19 @@ SHA256_SALT_SIZE=5
 VAL_KEY_SIZE=10
 
 params = config()
+
+# this is threaded email
+def send_email(email, val_key):
+    mail = smtplib.SMTP('localhost')
+    #imail.ehlo()
+    #mail.starttls()
+    ouremail = "manjur.tempcse311@gmail.com"
+    #passemailcode=email_config()["password"]
+    #mail.login(ouremail,passemailcode)
+    content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
+    mail.sendmail(ouremail,email,content)
+    mail.quit()
+    
 
 @mod.route("/")
 def hello():
@@ -112,17 +127,8 @@ def adduser():
                         logger.debug('starting validation email  %s'%(username))
 
                         # Send validation email
-                        mail = smtplib.SMTP('localhost')
-                        #imail.ehlo()
-                        #mail.starttls()
-                        ouremail = "manjur.tempcse311@gmail.com"
-                        #passemailcode=email_config()["password"]
+                        thread.start_new_thread(send_email, (email, val_key, ) )
 
-                        #mail.login(ouremail,passemailcode)
-                        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
-
-                        mail.sendmail(ouremail,email,content)
-                        mail.quit()
                         logger.debug('adduser: After mail is sent to username %s'%(username))
 
                         cur.close()
