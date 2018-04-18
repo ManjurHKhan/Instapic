@@ -108,6 +108,8 @@ def adduser():
                         query = "INSERT INTO VALIDATE (username,validkey) VALUES (%s,%s);"
                         cur.execute(query, (username, val_key,))
                         logger.debug('adduser: executed insertion of  %s'%(username))
+                        
+                        logger.debug('starting validation email  %s'%(username))
 
                         # Send validation email
                         mail = smtplib.SMTP('localhost')
@@ -119,8 +121,9 @@ def adduser():
                         #mail.login(ouremail,passemailcode)
                         content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
 
-                        mail.sendmail(ouremail,"manjur216q@gmail.com",content)
+                        mail.sendmail(ouremail,"koprty@gmail.com",content)
                         mail.quit()
+                        logger.debug('adduser: After mail is sent to username %s'%(username))
 
                         cur.close()
                         conn.commit()
