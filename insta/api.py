@@ -56,6 +56,8 @@ params = config()
 
 # this is threaded email
 def send_email(email, val_key):
+    logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
+
     mail = smtplib.SMTP('localhost')
     #imail.ehlo()
     #mail.starttls()
@@ -65,6 +67,8 @@ def send_email(email, val_key):
     content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
     mail.sendmail(ouremail,email,content)
     mail.quit()
+    logger.debug('THREAD - SENT EMAIL to: %s', email)
+
     
 
 @mod.route("/")
@@ -128,7 +132,7 @@ def adduser():
 
                         # Send validation email
                         try:
-                            thread.start_new_thread(send_email, (email, val_key, ) )
+                            _thread.start_new_thread(send_email, (email, val_key, ) )
                         except Exception as e:
                             logger.debug('Error on thread for email: %s', e)
                             logger.debug(traceback.format_exc())
