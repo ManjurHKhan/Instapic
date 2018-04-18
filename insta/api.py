@@ -509,7 +509,7 @@ def search():
                 #     q_data += (user_cookie,)
                     
                 if following:
-                    miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s) ; "
+                    miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
                     q_data += (user_cookie,)
                
                 order_query = "ORDER BY " + rank_order  + ", posts.postid"
@@ -525,6 +525,8 @@ def search():
                 # print (miniquery)
                 # print ()
                 query = query % miniquery + joinquery + order_query
+                logger.debug('search data:\n%s', query)
+                logger.debug('search data: %s', query)
 
                 # print (query)
                 # print (q_data)
