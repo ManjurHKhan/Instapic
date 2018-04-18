@@ -57,17 +57,21 @@ params = config()
 # this is threaded email
 def send_email(email, val_key):
     logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
-
-    mail = smtplib.SMTP('localhost')
-    #imail.ehlo()
-    #mail.starttls()
-    ouremail = "manjur.tempcse311@gmail.com"
-    #passemailcode=email_config()["password"]
-    #mail.login(ouremail,passemailcode)
-    content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
-    mail.sendmail(ouremail,email,content)
-    mail.quit()
-    logger.debug('THREAD - SENT EMAIL to: %s', email)
+    try:
+        mail = smtplib.SMTP('localhost')
+        #imail.ehlo()
+        #mail.starttls()
+        ouremail = "manjur.tempcse311@gmail.com"
+        #passemailcode=email_config()["password"]
+        #mail.login(ouremail,passemailcode)
+        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
+        mail.sendmail(ouremail,email,content)
+        logger.debug('THREAD - sending mail called........ to: %s', email)
+        mail.quit()
+        logger.debug('THREAD - SENT EMAIL to: %s', email)
+    except Exception as e:
+        logger.debug('send_email: somthing went wrong: %s',e)
+        logger.debug(traceback.format_exc())
 
     
 
