@@ -13,6 +13,7 @@ import time
 import smtplib
 
 import _thread
+from threading import Thread
 
 ## debugging tools
 import traceback
@@ -54,6 +55,19 @@ VAL_KEY_SIZE=10
 
 params = config()
 
+
+# def send_async_email(app,msg):
+#        with current_app.app_context():
+#                mail.send(msg)
+
+# def send_email(to, subject, template, **kwargs):
+#        msg = Message(subject, recipients=[to])
+#        msg.html = render_template('emails/' + template, **kwargs)
+#        thr = Thread(target=send_async_email,args=[app,msg])
+#        thr.start()
+#        return thr
+
+
 # this is threaded email
 def send_email(email, val_key):
     logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
@@ -84,8 +98,8 @@ def hello():
 
     try:
         logger.debug("EMAILING with thread and dummy args:")
-
-        _thread.start_new_thread(send_email, (email, val_key ) )
+        thr = Thread(target=send_email,args=[email, val_key])
+        thr.start()
     except Exception as e:
         logger.debug('Error on thread for email: %s', e)
         logger.debug(traceback.format_exc())
