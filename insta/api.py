@@ -309,7 +309,9 @@ def add_items():
                     postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
                     
                     cur = conn.cursor()
-                    parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
+                    parent = None
+                    if "parent" in data:
+                        parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
                     
                     if parent == None and child_type != None: 
                         return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
@@ -327,7 +329,7 @@ def add_items():
                         query = "INSERT INTO posts(username, postid, content) VALUES (%s, %s, %s);"
                         logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
                         # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
-                        cur.execute(query, (user_cookie, postid, content, child_type, ))
+                        cur.execute(query, (user_cookie, postid, content, ))
 
                     if "media" in data:
                         media = data["media"]
