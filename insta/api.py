@@ -159,13 +159,13 @@ def adduser():
                         logger.debug('adduser: executed insertion of  %s'%(username))
                         
                         logger.debug('starting validation email  %s'%(username))
-
+                        send_email(email, val_key)
                         # Send validation email
-                        try:
-                            _thread.start_new_thread(send_email, (email, val_key, ) )
-                        except Exception as e:
-                            logger.debug('Error on thread for email: %s', e)
-                            logger.debug(traceback.format_exc())
+                        #try:
+                        #    _thread.start_new_thread(send_email, (email, val_key, ) )
+                        #except Exception as e:
+                        #    logger.debug('Error on thread for email: %s', e)
+                        #    logger.debug(traceback.format_exc())
 
                         logger.debug('adduser: After mail is sent to username %s'%(username))
 
