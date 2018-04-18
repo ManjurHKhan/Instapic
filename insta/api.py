@@ -128,7 +128,7 @@ def adduser():
 
                         # Send validation email
                         try:
-                            thread.start_new_thread(send_email, (email, val_key, ) )
+                           _thread.start_new_thread(send_email, (email, val_key, ) )
                         except Exception as e:
                             logger.debug('Error on thread for email: %s', e)
                             logger.debug(traceback.format_exc())
