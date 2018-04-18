@@ -94,15 +94,13 @@ def adduser():
                         
                         # Generate salt and hash the password
                         salty= base64.b64encode(os.urandom(10)).decode()[:SHA256_SALT_SIZE]
-                        logger.debug(salty, "is this good? ", len(salty))
 
                         # Hash that password
                         secret = (pwd + salty).encode('UTF-8')
                         passwd = hashlib.sha256(secret).hexdigest()
                         # Generate validation key
                         val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
-                        
-                        logger.debug(val_key, "is this good? ", len(val_key))
+                        logger.debug("executing query in add user")
 
                         logger.debug(query%(username,passwd,email,salty))
                         cur.execute(query, (username,passwd,email,salty,))
@@ -121,7 +119,7 @@ def adduser():
                         #mail.login(ouremail,passemailcode)
                         content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
 
-                        mail.sendmail(ouremail,email,content)
+                        mail.sendmail(ouremail,"manjur216q@gmail.com",content)
                         mail.quit()
 
                         cur.close()
