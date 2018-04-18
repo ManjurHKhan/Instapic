@@ -112,17 +112,17 @@ def adduser():
                         logger.debug('adduser: executed insertion of  %s'%(username))
 
                         # Send validation email
-                        mail = smtplib.SMTP('smtp.gmail.com',587)
-                        mail.ehlo()
-                        mail.starttls()
-                        ouremail = "manjur.tempcse311@gmail.com"
-                        passemailcode=email_config()["password"]
+                        mail = smtplib.SMTP('localhost')
+                        #imail.ehlo()
+                        #mail.starttls()
+                        #ouremail = "manjur.tempcse311@gmail.com"
+                        #passemailcode=email_config()["password"]
 
-                        mail.login(ouremail,passemailcode)
+                        #mail.login(ouremail,passemailcode)
                         content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
 
                         mail.sendmail(ouremail,email,content)
-
+                        mail.quit()
 
                         cur.close()
                         conn.commit()
