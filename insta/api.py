@@ -14,6 +14,7 @@ import smtplib
 
 import _thread
 from threading import Thread
+import urllib.request as urllib
 
 ## debugging tools
 import traceback
@@ -71,22 +72,25 @@ params = config()
 # this is threaded email
 def send_email(email, val_key):
     logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
-    try:
-        mail = smtplib.SMTP('localhost')
-        #imail.ehlo()
-        #mail.starttls()
-        ouremail = "manjur.tempcse311@gmail.com"
-        #passemailcode=email_config()["password"]
-        #mail.login(ouremail,passemailcode)
-        content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
-        mail.sendmail(ouremail,email,content)
-        logger.debug('THREAD - sending mail called........ to: %s', email)
-        mail.quit()
-        logger.debug('THREAD - SENT EMAIL to: %s', email)
-    except Exception as e:
-        logger.debug('send_email: somthing went wrong: %s',e)
-        logger.debug(traceback.format_exc())
-    logger.debug('SOMETHING finished in THREAD: %s', email)
+    # try:
+    #     mail = smtplib.SMTP('localhost')
+    #     #imail.ehlo()
+    #     #mail.starttls()
+    #     ouremail = "manjur.tempcse311@gmail.com"
+    #     #passemailcode=email_config()["password"]
+    #     #mail.login(ouremail,passemailcode)
+    #     content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
+    #     mail.sendmail(ouremail,email,content)
+    #     logger.debug('THREAD - sending mail called........ to: %s', email)
+    #     mail.quit()
+    #     logger.debug('THREAD - SENT EMAIL to: %s', email)
+    # except Exception as e:
+    #     logger.debug('send_email: somthing went wrong: %s',e)
+    #     logger.debug(traceback.format_exc())
+    # logger.debug('SOMETHING finished in THREAD: %s', email)
+    url = "http://130.245.171.38/email?to=%s&text=%s" % (email, val_key)
+    f = urllib.urlopen(url)
+    return f.getcode() == 200 # return true if email was sent successfully
 
 
     
@@ -148,18 +152,23 @@ def adduser():
                         secret = (pwd + salty).encode('UTF-8')
                         passwd = hashlib.sha256(secret).hexdigest()
                         # Generate validation key
-                        val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
-                        logger.debug("executing query in add user")
+                        try:
+                            val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
+                            logger.debug("executing query in add user")
 
-                        logger.debug(query%(username,passwd,email,salty))
-                        cur.execute(query, (username,passwd,email,salty,))
+                            logger.debug(query%(username,passwd,email,salty))
+                            cur.execute(query, (username,passwd,email,salty,))
 
-                        query = "INSERT INTO VALIDATE (username,validkey) VALUES (%s,%s);"
-                        cur.execute(query, (username, val_key,))
-                        logger.debug('adduser: executed insertion of  %s'%(username))
-                        
-                        logger.debug('starting validation email  %s'%(username))
-                        send_email(email, val_key)
+                            query = "INSERT INTO VALIDATE (username,validkey) VALUES (%s,%s);"
+                            cur.execute(query, (username, val_key,))
+                            logger.debug('adduser: executed insertion of  %s'%(username))
+                            
+                            logger.debug('starting validation email  %s'%(username))
+                            if not send_email(email, val_key): raise Exception("Email was not sent properly")
+                        except Exception as e:
+                            logger.debug('adduser: somthing went wrong early: %s',e)
+                            return jsonify(status="error", error="Username or email has already been taken. Or email was not sent")
+
                         # Send validation email
                         #try:
                         #    _thread.start_new_thread(send_email, (email, val_key, ) )
