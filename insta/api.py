@@ -99,16 +99,16 @@ def send_email(email, val_key):
 #mail = smtplib.SMTP('localhost')
 @mod.route("/")
 def hello():
-    email="koprty@gmail.com"
-    val_key="123456"
+    # email="koprty@gmail.com"
+    # val_key="123456"
 
-    try:
-        logger.debug("EMAILING with thread and dummy args:")
-        thr = Thread(target=send_email,args=[email, val_key])
-        thr.start()
-    except Exception as e:
-        logger.debug('Error on thread for email: %s', e)
-        logger.debug(traceback.format_exc())
+    # try:
+    #     logger.debug("EMAILING with thread and dummy args:")
+    #     thr = Thread(target=send_email,args=[email, val_key])
+    #     thr.start()
+    # except Exception as e:
+    #     logger.debug('Error on thread for email: %s', e)
+    #     logger.debug(traceback.format_exc())
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
