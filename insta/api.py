@@ -594,6 +594,7 @@ def search():
                     conn = psycopg2.connect(**params)
                     logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
+                    logger.debug(query % q_data)
                     # logger.debug('search posts query:%s', query % (timestamp, limit))
                     cur.execute(query, q_data)
                     
