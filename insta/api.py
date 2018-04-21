@@ -15,7 +15,7 @@ import smtplib
 import _thread
 from threading import Thread
 import urllib.request as urllib
-
+from urllib.parse import urlencode
 ## debugging tools
 import traceback
 
@@ -88,7 +88,9 @@ def send_email(email, val_key):
     #     logger.debug('send_email: somthing went wrong: %s',e)
     #     logger.debug(traceback.format_exc())
     # logger.debug('SOMETHING finished in THREAD: %s', email)
-    url = "http://130.245.171.38/email?to=%s&text=%s" % (email, val_key)
+    
+    # url = "http://130.245.171.38/email?to=%s&text=%s" % (email, val_key)
+    url = "http://130.245.171.38/email?%s" % (urlencode({'to':email, 'text':val_key}))
     f = urllib.urlopen(url)
     return f.getcode() == 200 # return true if email was sent successfully
 
