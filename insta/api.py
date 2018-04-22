@@ -72,13 +72,14 @@ def send_delete_node(postid):
 
 
 def add_item_thread(user_cookie,postid, data):
+    curr = None
+    conn = None
     try:
         content = None
         child_type = None
         parent = None
         media = []
         conn = psycopg2.connect(**params)
-        curr = None
         if "content" in data:
             content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
         if "childType" in data:
@@ -123,8 +124,14 @@ def add_item_thread(user_cookie,postid, data):
         cur.close()
         conn.commit()
         conn.close()
+        return
 
     except Exception as e:
+        if (cur != None):
+            cur.close()
+        if (conn != None):
+            conn.commit()
+            conn.close()
         logger.debug('adduser: somthing went wrong: %s',e)
         logger.debug(traceback.format_exc())
 
