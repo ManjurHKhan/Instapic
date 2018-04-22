@@ -3,7 +3,7 @@ from flask import render_template,request, redirect, jsonify, make_response, ses
 from http import cookies
 from insta.dbconfig import config, email_config
 import psycopg2
-import logging
+# import logging
 import os
 import binascii
 import uuid
@@ -25,21 +25,21 @@ urltoFiles = ""
 ######################
 ### Set up Logging ###
 ######################
-logger = logging.getLogger('instadata')
-logger.setLevel(logging.DEBUG)
-# create file handler which logs even debug messages
-fh = logging.FileHandler('log_api.log')
-fh.setLevel(logging.DEBUG)
-# create console handler with a higher log level
-ch = logging.StreamHandler()
-ch.setLevel(logging.ERROR)
-# create formatter and add it to the handlers
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-fh.setFormatter(formatter)
-# add the handlers to logger
-logger.addHandler(ch)
-logger.addHandler(fh)
+# logger = logging.getLogger('instadata')
+# logger.setLevel(logging.DEBUG)
+# # create file handler which logs even debug messages
+# fh = logging.FileHandler('log_api.log')
+# fh.setLevel(logging.DEBUG)
+# # create console handler with a higher log level
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.ERROR)
+# # create formatter and add it to the handlers
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# ch.setFormatter(formatter)
+# fh.setFormatter(formatter)
+# # add the handlers to logger
+# logger.addHandler(ch)
+# logger.addHandler(fh)
 
 # Example loggers
 # logger.debug('debug message')
@@ -58,14 +58,14 @@ params = config()
 
 # this is threaded email - sends email through node email server
 def send_email(email, val_key):
-    logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
+    # logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
     url = "http://130.245.171.38/email?%s" % (urlencode({'to':email, 'text':val_key}))
     f = urllib.urlopen(url)
     return f.getcode() == 200 # return true if email was sent successfully
 
 
 def send_delete_node(postid):
-    logger.debug('THREAD - STARTING TO delete post %s', postid)
+    # logger.debug('THREAD - STARTING TO delete post %s', postid)
     url = "http://130.245.171.38/delete/%s" % (postid)
     f = urllib.urlopen(url)
     return f.getcode() == 200 # return true if deleted node
@@ -109,7 +109,7 @@ def add_item_thread(user_cookie, postid, data):
             #logger.debug('additem-content 1: %s',data['content'])
             #logger.debug('additem-content 2: %s',content)
             query = "INSERT INTO posts(username, postid, content) VALUES (%s, %s, %s);"
-            logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
+            # logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
             # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
             cur.execute(query, (user_cookie, postid, content, ))
 
@@ -132,8 +132,8 @@ def add_item_thread(user_cookie, postid, data):
         if (conn != None):
             conn.commit()
             conn.close()
-        logger.debug('add_item_thready: somthing went wrong: %s',e)
-        logger.debug(traceback.format_exc())
+        # logger.debug('add_item_thready: somthing went wrong: %s',e)
+        # logger.debug(traceback.format_exc())
 
 #mail = smtplib.SMTP('localhost')
 @mod.route("/")
@@ -148,32 +148,32 @@ def adduser():
             username = data["username"].strip() if data["username"].strip() != "" else None
             pwd = data["password"].strip() if data["password"].strip() != "" else None
             email = data["email"].strip() if data["email"].strip() != "" else None
-            logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
+            # logger.debug('adduser: json post things: %s, %s, %s'%(username,pwd,email))
 
             if (username != None and pwd != None and email != None):
                 #process request
                 conn = psycopg2.connect(**params)
                 if(conn == None):
-                    logger.debug('DB connection cannot be established for adding user. Returning error', res)
+                    # logger.debug('DB connection cannot be established for adding user. Returning error', res)
                     return jsonify(status="error", error="Database connection could not be established")
                 curr = None
                 try:
                     ### CONNECT TO THE DATABASE
-                    logger.debug('conn:%s', conn)
+                    # logger.debug('conn:%s', conn)
                     # create a cursor
                     cur = conn.cursor()
                     # validate if username or email has already been taken
 
                     query = "SELECT * FROM USERS where username=%s or email=%s;"
                     cur.execute(query, (username,email,))
-                    logger.debug('adduser: fetching if username or email exists')
+                    # logger.debug('adduser: fetching if username or email exists')
 
                     res = cur.fetchone()
 
-                    logger.debug('adduser: fetched. %s', res)
+                    # logger.debug('adduser: fetched. %s', res)
 
                     if (res == None):
-                        logger.debug('adduser: Starting to insert things into the table :D with %s', res)
+                        # logger.debug('adduser: Starting to insert things into the table :D with %s', res)
                         query = "INSERT INTO USERS (username,password,email,salt) VALUES (%s,%s,%s,%s);";
                         
                         # Generate salt and hash the password
@@ -185,19 +185,19 @@ def adduser():
                         # Generate validation key
                         try:
                             val_key = str(uuid.uuid4()).replace("-","").upper()[0:VAL_KEY_SIZE]
-                            logger.debug("executing query in add user")
+                            # logger.debug("executing query in add user")
 
-                            logger.debug(query%(username,passwd,email,salty))
+                            # logger.debug(query%(username,passwd,email,salty))
                             cur.execute(query, (username,passwd,email,salty,))
 
                             query = "INSERT INTO VALIDATE (username,validkey) VALUES (%s,%s);"
                             cur.execute(query, (username, val_key,))
-                            logger.debug('adduser: executed insertion of  %s'%(username))
+                            # logger.debug('adduser: executed insertion of  %s'%(username))
                             
-                            logger.debug('starting validation email  %s'%(username))
+                            # logger.debug('starting validation email  %s'%(username))
                             if not send_email(email, val_key): raise Exception("Email was not sent properly")
                         except Exception as e:
-                            logger.debug('adduser: somthing went wrong early: %s',e)
+                            # logger.debug('adduser: somthing went wrong early: %s',e)
                             return jsonify(status="error", error="Username or email has already been taken. Or email was not sent")
 
                         # Send validation email via thread
@@ -207,29 +207,29 @@ def adduser():
                         #    logger.debug('Error on thread for email: %s', e)
                         #    logger.debug(traceback.format_exc())
 
-                        logger.debug('adduser: After mail is sent to username %s'%(username))
+                        # logger.debug('adduser: After mail is sent to username %s'%(username))
 
                         cur.close()
                         conn.commit()
                         conn.close()
                         return jsonify(status="OK", error="Added user :D - unvalidated")
                     else:
-                        logger.debug('adduser: FAILED insertion of new account: %s'%(username))
+                        # logger.debug('adduser: FAILED insertion of new account: %s'%(username))
                         cur.close()
                         conn.commit()
                         conn.close()
                         return jsonify(status="error", error="Username or email has already been taken.")
 
                 except Exception as e:
-                    logger.debug('adduser: somthing went wrong: %s',e)
-                    logger.debug(traceback.format_exc())
+                    # logger.debug('adduser: somthing went wrong: %s',e)
+                    # logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
                     conn.close()
                     return jsonify(status="error", error="Connection broke")
 
-    logger.debug('adduser: bad json data given')
+    # logger.debug('adduser: bad json data given')
     return jsonify(status="error", error="No json data was posted")
 
 @mod.route("/login", methods=["POST"])
@@ -253,12 +253,12 @@ def login():
         if (data != None):
             username = data["username"]
             pwd = data["password"]
-            logger.debug('login: json post things: %s, %s'%(username,pwd))
+            # logger.debug('login: json post things: %s, %s'%(username,pwd))
             if (username != None and pwd != None):
                   #process request
                 try:
                     ### CONNECT TO THE DATABASE
-                    logger.debug('conn:%s', conn)
+                    # logger.debug('conn:%s', conn)
                     # create a cursor
                     cur = conn.cursor()
                     # validate if username or email has already been taken
@@ -272,13 +272,13 @@ def login():
                         secret_pass = res[1]
                         #cookie_key = res[3] # Just going to use the validation key as the cookie id
                         cookie_key = res[2] # Just going to use the username as the cookie id
-                        logger.debug(salt, secret_pass,cookie_key)
+                        # logger.debug(salt, secret_pass,cookie_key)
 
 
                         secret = (pwd + salt).encode('UTF-8')
                         # secret = pwd + salt
                         passwd = hashlib.sha256(secret).hexdigest()
-                        logger.debug(secret,passwd)
+                        # logger.debug(secret,passwd)
 
                         if (passwd  == secret_pass):
                             #set cookie
@@ -291,8 +291,8 @@ def login():
                         conn.close()
                         return jsonify(status="error", error="Inputted account details are not for a valid account.")
                 except Exception as e:
-                    logger.debug('login: error  %s',e)
-                    logger.debug(traceback.format_exc())
+                    # logger.debug('login: error  %s',e)
+                    # logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
@@ -301,7 +301,7 @@ def login():
     if (cur != None):
         cur.close()
     conn.close()
-    logger.debug('login: bad json data given')
+    # logger.debug('login: bad json data given')
     return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
 
 
@@ -313,12 +313,12 @@ def logout():
     session.pop('userID', None)
     session.pop('validated', None)
     #resp.set_cookie('userID', expires=0)
-    logger.debug('logged out')
+    # logger.debug('logged out')
     return jsonify(status="OK")
 
 @mod.route("/verify", methods=["POST"])
 def verify():
-    logger.debug("start_verify")
+    # logger.debug("start_verify")
 
     data = request.get_json(silent=True)
     if (data != None):
@@ -330,17 +330,17 @@ def verify():
             try:
                 conn = psycopg2.connect(**params)
                 curr = None
-                logger.debug('conn:%s', conn)
+                # logger.debug('conn:%s', conn)
                 cur = conn.cursor()
                 query = "SELECT username FROM users where email=%s and validated is False"
-                logger.debug("verify query: %s", query)
+                # logger.debug("verify query: %s", query)
                 cur.execute(query, (email,))
                 rez = cur.fetchone()
                 if (rez == None):
                     return jsonify(status="error", error="Invalid Verify inputs.")
                 else:
                     username = rez[0]
-                    logger.debug("verify: Username: %s,"%(username))
+                    # logger.debug("verify: Username: %s,"%(username))
                     query = "SELECT * FROM validate where username=%s and validkey=%s;"
 
                     cur.execute(query, (username,key,))
@@ -358,8 +358,8 @@ def verify():
                     conn.close()
                     return jsonify(status="OK")
             except Exception as e:
-                logger.debug('verify: somthing went wrong: %s',e)
-                logger.debug(traceback.format_exc())
+                # logger.debug('verify: somthing went wrong: %s',e)
+                # logger.debug(traceback.format_exc())
                 if (cur != None):
                     cur.close()
                 conn.commit()
@@ -382,8 +382,8 @@ def add_items():
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
-                    logger.debug('additem: something went wrong %s',e)
-                    logger.debug(traceback.format_exc())
+                    # logger.debug('additem: something went wrong %s',e)
+                    # logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
@@ -402,10 +402,10 @@ def get_item(id):
     user_cookie = session.get("userID")
     if (user_cookie != None):
         try:
-            logger.debug('conn:%s', conn)
+            # logger.debug('conn:%s', conn)
             cur = conn.cursor()
             query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM posts FULL OUTER JOIN user_media ON posts.postid = user_media.postid WHERE posts.postid = %s;"
-            logger.debug("get item query:%s", query % (str(id)))
+            # logger.debug("get item query:%s", query % (str(id)))
             cur.execute(query, (str(id), ))
             items = cur.fetchall()
             media = []
@@ -439,8 +439,8 @@ def get_item(id):
             conn.close()
             return jsonify(status="OK", item = item)
         except Exception as e:
-            logger.debug('login: error  %s', e)
-            logger.debug(traceback.format_exc())
+            # logger.debug('login: error  %s', e)
+            # logger.debug(traceback.format_exc())
             if (cur != None):
                 cur.close()
             conn.commit()
@@ -455,11 +455,11 @@ def search():
     conn = None
     curr = None
     user_cookie = session.get("userID")
-    logger.debug("-- search user cookie : %s", user_cookie)
+    # logger.debug("-- search user cookie : %s", user_cookie)
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
-            logger.debug('search data:%s', data)
+            # logger.debug('search data:%s', data)
 
             if (data != None):
                 limit = 25
@@ -563,27 +563,27 @@ def search():
                 # print (miniquery)
                 # print ()
                 query = query % miniquery + joinquery + order_query
-                logger.debug('search data:\n%s', query)
-                logger.debug('search data: %s', query)
+                # logger.debug('search data:\n%s', query)
+                # logger.debug('search data: %s', query)
 
                 # print (query)
                 # print (q_data)
 
-                logger.debug("search query with data %s", query % (q_data))
-                logger.debug("search query %s", query)
+                # logger.debug("search query with data %s", query % (q_data))
+                # logger.debug("search query %s", query)
 
                 try:
                     conn = psycopg2.connect(**params)
-                    logger.debug('search conn:%s', conn)
+                    # logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
-                    logger.debug(query % q_data)
+                    # logger.debug(query % q_data)
                     # logger.debug('search posts query:%s', query % (timestamp, limit))
                     cur.execute(query, q_data)
                     
                     items = cur.fetchall()
-                    logger.debug("search item response %s" % (items))
+                    # logger.debug("search item response %s" % (items))
                     if len(items) == 0:
-                        logger.debug("NONE fetch for query %s" % (query))
+                        # logger.debug("NONE fetch for query %s" % (query))
                         return jsonify(status="OK",  items=[])
                     ret_items = []
 
@@ -635,8 +635,8 @@ def search():
                     conn.close()
                     return jsonify(status="OK", items=ret_items)
                 except Exception as e:
-                    logger.debug('search: error  %s', e)
-                    logger.debug(traceback.format_exc())
+                    # logger.debug('search: error  %s', e)
+                    # logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
@@ -657,7 +657,7 @@ def del_item(id):
             # we should validate the cookie here...
             cur = conn.cursor()
             query="DELETE FROM posts where postid = %s RETURNING child_type, parent_id ;"
-            logger.debug("delete query %s", query % (str(id)))
+            # logger.debug("delete query %s", query % (str(id)))
             cur.execute(query, (str(id), )) 
             rez = cur.fetchone()
 
@@ -667,8 +667,8 @@ def del_item(id):
                 try:
                    _thread.start_new_thread(send_delete_node, (postid, ) )
                 except Exception as e:
-                   logger.debug('Error on thread for email: %s', e)
-                   logger.debug(traceback.format_exc())
+                   # logger.debug('Error on thread for email: %s', e)
+                   # logger.debug(traceback.format_exc())
 
                 cur.execute(query2, (user_cookie, postid,))
 
@@ -680,8 +680,8 @@ def del_item(id):
             conn.close()
             return jsonify(status="error", error="User not logged in")
     except Exception as e:
-        logger.debug('users_user_is_following: error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error", error="item not deleted....")
     return jsonify(status="OK")
 
@@ -690,7 +690,7 @@ def del_item(id):
 def user_info(username):
     try:
         conn = psycopg2.connect(**params)
-        logger.debug('user/username conn:%s', conn)
+        # logger.debug('user/username conn:%s', conn)
         cur = conn.cursor()
 
         ret_user = {'email':None, followers:0, following:0}
@@ -711,7 +711,7 @@ def user_info(username):
             cur.execute(query, (username,))
             items = cur.fetchone()
             ret_user['following'] = items[0]
-            logger.debug("/user/%s returned %s", username, str(ret_user))
+            # logger.debug("/user/%s returned %s", username, str(ret_user))
             
             cur.close()
             conn.commit()
@@ -719,8 +719,8 @@ def user_info(username):
             return jsonify(status="OK", user = ret_user)
 
     except Exception as e:
-        logger.debug('users_user_is_following: error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error", error="user not found")
     return jsonify(status="error", error="user not found")
 
@@ -753,8 +753,8 @@ def user_followers(username):
             return jsonify(status="OK",users=followers)
 
     except Exception as e:
-        logger.debug('users_user_is_following: error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error",error="Some DB connection failed probably")
 
 @mod.route("/user/<username>/following", methods=["GET"])
@@ -780,20 +780,20 @@ def users_user_is_following(username):
             if ll != None and int(ll) <= 200 :
                 limit = int(ll)
             query = "SELECT follows FROM followers where username=%s LIMIT %s;"
-            logger.debug(query)
+            # logger.debug(query)
             cur.execute(query, (username, limit,))
             rez = cur.fetchall()
             followings = [y for row in rez for y in row]
             return jsonify(status="OK",users=followings)
 
     except Exception as e:
-        logger.debug('users_user_is_following: error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error",error="Some DB connection failed probably")
 
 @mod.route("/follow", methods=["POST"])
 def user_follow():
-    logger.debug('top follow: starting endpoint eval ')
+    # logger.debug('top follow: starting endpoint eval ')
     try:
         conn = psycopg2.connect(**params)
         cur = None
@@ -835,7 +835,7 @@ def user_follow():
                     if (follow):
                         #Following
                         query = "INSERT INTO followers (username, follows) VALUES(%s , %s);"
-                        logger.debug("query: %s", query % (user_cookie, username))
+                        # logger.debug("query: %s", query % (user_cookie, username))
                         cur.execute(query, (user_cookie, username,))
                         #query = "INSERT INTO following (username, following) VALUES('%s','%s') " % (username, user_cookie)
                         #cur.execute(query) 
@@ -852,14 +852,14 @@ def user_follow():
         return jsonify(status="error",error="Invalid request - send json please.")
         
     except Exception as e:
-        logger.error('follow: Error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.error('follow: Error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 @mod.route("/item/<id>/like", methods=["POST"])
 def post_like(id):
     post_id = id
-    logger.debug('top follow: starting endpoint eval ')
+    # logger.debug('top follow: starting endpoint eval ')
     try:
         conn = psycopg2.connect(**params)
         cur = None
@@ -912,8 +912,8 @@ def post_like(id):
         return jsonify(status="error",error="Invalid request - send json please.")
         
     except Exception as e:
-        logger.error('follow: Error  %s', e)
-        logger.debug(traceback.format_exc())
+        # logger.error('follow: Error  %s', e)
+        # logger.debug(traceback.format_exc())
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 
