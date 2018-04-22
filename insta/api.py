@@ -669,6 +669,7 @@ def del_item(id):
                 except Exception as e:
                    # logger.debug('Error on thread for email: %s', e)
                    # logger.debug(traceback.format_exc())
+                   pass
 
                 cur.execute(query2, (user_cookie, postid,))
 
