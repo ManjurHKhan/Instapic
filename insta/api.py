@@ -71,7 +71,7 @@ def send_delete_node(postid):
     return f.getcode() == 200 # return true if deleted node
 
 
-def add_item_thread(user_cookie, postid, data):
+def add_item_thread(user_cookie, postid, data, date):
     cur = None
     conn = None
     try:
@@ -132,7 +132,7 @@ def add_item_thread(user_cookie, postid, data):
         if (conn != None):
             conn.commit()
             conn.close()
-        logger.debug('adduser: somthing went wrong: %s',e)
+        logger.debug('add_item_thready: somthing went wrong: %s',e)
         logger.debug(traceback.format_exc())
 
 #mail = smtplib.SMTP('localhost')
