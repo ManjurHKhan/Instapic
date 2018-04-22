@@ -71,8 +71,8 @@ def send_delete_node(postid):
     return f.getcode() == 200 # return true if deleted node
 
 
-def add_item_thread(user_cookie,postid, data):
-    curr = None
+def add_item_thread(user_cookie, postid, data):
+    cur = None
     conn = None
     try:
         content = None
