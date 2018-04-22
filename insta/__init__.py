@@ -1,13 +1,13 @@
 from flask import Flask
 
+from insta.api import app
+# app = Flask(__name__)
 
-app = Flask(__name__)
+# from insta.api import mod as api_routes
+# from insta.site import mod as site_routes
 
-from insta.api import mod as api_routes
-from insta.site import mod as site_routes
-
-app.register_blueprint(site_routes, url_prefix ='/site')
-app.register_blueprint(api_routes)
+# app.register_blueprint(site_routes, url_prefix ='/site')
+# app.register_blueprint(api_routes)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')
