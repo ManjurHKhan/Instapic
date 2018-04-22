@@ -56,59 +56,23 @@ VAL_KEY_SIZE=10
 
 params = config()
 
-
-# def send_async_email(app,msg):
-#        with current_app.app_context():
-#                mail.send(msg)
-
-# def send_email(to, subject, template, **kwargs):
-#        msg = Message(subject, recipients=[to])
-#        msg.html = render_template('emails/' + template, **kwargs)
-#        thr = Thread(target=send_async_email,args=[app,msg])
-#        thr.start()
-#        return thr
-
-
-# this is threaded email
+# this is threaded email - sends email through node email server
 def send_email(email, val_key):
     logger.debug('THREAD - STARTING TO SEND EMAIL to: %s', email)
-    # try:
-    #     mail = smtplib.SMTP('localhost')
-    #     #imail.ehlo()
-    #     #mail.starttls()
-    #     ouremail = "manjur.tempcse311@gmail.com"
-    #     #passemailcode=email_config()["password"]
-    #     #mail.login(ouremail,passemailcode)
-    #     content = "TO: %s\nFROM:manjur.temp311@gmail.com\nSUBJECT:Email validation code from Insta\nvalidation key: <%s>" % (email, val_key)
-    #     mail.sendmail(ouremail,email,content)
-    #     logger.debug('THREAD - sending mail called........ to: %s', email)
-    #     mail.quit()
-    #     logger.debug('THREAD - SENT EMAIL to: %s', email)
-    # except Exception as e:
-    #     logger.debug('send_email: somthing went wrong: %s',e)
-    #     logger.debug(traceback.format_exc())
-    # logger.debug('SOMETHING finished in THREAD: %s', email)
-    
-    # url = "http://130.245.171.38/email?to=%s&text=%s" % (email, val_key)
     url = "http://130.245.171.38/email?%s" % (urlencode({'to':email, 'text':val_key}))
     f = urllib.urlopen(url)
     return f.getcode() == 200 # return true if email was sent successfully
 
 
-    
+def send_delete_node(postid):
+    logger.debug('THREAD - STARTING TO delete post %s', postid)
+    url = "http://130.245.171.38/delete/%s" % (postid)
+    f = urllib.urlopen(url)
+    return f.getcode() == 200 # return true if deleted node
+
 #mail = smtplib.SMTP('localhost')
 @mod.route("/")
 def hello():
-    # email="koprty@gmail.com"
-    # val_key="123456"
-
-    # try:
-    #     logger.debug("EMAILING with thread and dummy args:")
-    #     thr = Thread(target=send_email,args=[email, val_key])
-    #     thr.start()
-    # except Exception as e:
-    #     logger.debug('Error on thread for email: %s', e)
-    #     logger.debug(traceback.format_exc())
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
@@ -171,7 +135,7 @@ def adduser():
                             logger.debug('adduser: somthing went wrong early: %s',e)
                             return jsonify(status="error", error="Username or email has already been taken. Or email was not sent")
 
-                        # Send validation email
+                        # Send validation email via thread
                         #try:
                         #    _thread.start_new_thread(send_email, (email, val_key, ) )
                         #except Exception as e:
@@ -679,9 +643,18 @@ def del_item(id):
             cur.execute(query, (str(id), )) 
             rez = cur.fetchone()
 
+            postid = rez[1]
             if rez != None and len(rez) > 0 and rez[0] == "retweet":
                 query2 ="UPDATE posts set retweet_cnt = retweet_cnt-1 where username=%s and postid=%s;"
-                cur.execute(query2, (user_cookie, rez[1],))
+                try:
+                   _thread.start_new_thread(send_delete_node, (postid, ) )
+                except Exception as e:
+                   logger.debug('Error on thread for email: %s', e)
+                   logger.debug(traceback.format_exc())
+
+                cur.execute(query2, (user_cookie, postid,))
+
+
             cur.close()
             conn.commit()
             conn.close()
