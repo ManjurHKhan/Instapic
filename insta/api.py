@@ -378,7 +378,8 @@ def add_items():
             if(data != None):
                 try:
                     postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
-                    _thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
+                    add_item_thread(user_cookie, postid, data)
+                    #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
                     logger.debug('additem: something went wrong %s',e)
