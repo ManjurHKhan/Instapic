@@ -132,7 +132,7 @@ def add_item_thread(user_cookie, postid, data):
         if (conn != None):
             conn.commit()
             conn.close()
-        logger.debug('additem: somthing went wrong: %s',e)
+        logger.debug('adduser: somthing went wrong: %s',e)
         logger.debug(traceback.format_exc())
 
 #mail = smtplib.SMTP('localhost')
@@ -378,8 +378,7 @@ def add_items():
             if(data != None):
                 try:
                     postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
-                    add_item_thread(user_cookie, postid, data)
-                    #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
+                    _thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
                     logger.debug('additem: something went wrong %s',e)
