@@ -100,6 +100,9 @@ def add_item_thread(user_cookie, postid, data):
 @mod.route("/")
 def hello():
     return "<h1 style='color:green'>Hello Main World!</h1>"
+@mod.route("/test")
+def hellod():
+    return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @mod.route("/adduser", methods=["POST"])
 def adduser():
