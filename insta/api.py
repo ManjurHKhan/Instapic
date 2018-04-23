@@ -593,10 +593,31 @@ def search():
                 if "following" in data:
                     following = data["following"]
                 
+                where_query = ""
                 if "q" in data:
                     q_string = "%%%s%%" % (data["q"])
                     miniquery += "AND content LIKE %s "
-                    q_data += (q_string,)
+                    # q_data += (q_string,)
+                    q_data = (" ",)
+                    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                            {  "regexp": { "content": ".*"+q_string+".*" }}
+                            #,
+                            # { "range": { "timestamp":  {
+                            #             "gte" : timestamp,
+                            #             }
+                            #             } 
+                            #             }
+                            ] 
+
+                            # }
+                        }
+                    }
+                    hits = [ "'" + x["_id"] + "'" for x in rez["hits"]]
+                    str_hits = ", ".join(hits) 
+                    where_query = " WHERE posts.postid in " + str_hits
                 rank_order = ""
                 if "rank" in data:
                     rank = data["rank"].rstrip()
@@ -642,25 +663,7 @@ def search():
                     miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
                     q_data += (user_cookie,)
                
-                 rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body={
-                    "query": {
-                        "bool": {
-                            "must": [
-                            {  "regexp": { "content": ".*"+q_string+".*" }}
-                            #,
-                            # { "range": { "timestamp":  {
-                            #             "gte" : timestamp,
-                            #             }
-                            #             } 
-                            #             }
-                            ] 
-
-                            # }
-                        }
-                    }
-                hits = [ "'" + x["_id"] + "'" for x in rez["hits"]]
-                str_hits = ", ".join(hits) 
-                where_query = " WHERE posts.postid in " str_hits
+                 
                 order_query = "ORDER BY " + rank_order  + ", posts.postid"
 
                 miniquery += order_query
