@@ -11,6 +11,7 @@ import hashlib
 import base64
 import time
 import smtplib
+import requests
 
 import _thread
 from threading import Thread
@@ -79,11 +80,18 @@ def send_delete_node(postid):
 
 def add_item_thread(user_cookie, postid, data):
     logger.debug('THREAD - STARTING TO delete post %s', postid)
+
+    headers = {'Content-type': 'application/json'}
+
+    data = request.get_json(silent=True)
     data["postid"] = postid
-    print (data)
-    url = "http://130.245.171.38/additem"
-    #r = requests.post(url, data = data)
-    req = urllib.Request(url, data)
+    url = "http://130.245.168.64/additem"
+    #r = requests.post(url,  data={'number': 12524, 'type': 'issue', 'action': 'show'}, headers=headers)
+    r = requests.post(url,  json={'data': data}, headers=headers)
+    # data["postid"] = postid
+    # url = "http://130.245.168.64/additem"
+    # #r = requests.post(url, data = data)
+    # req = urllib.Request(url, data)
     return True # return true -- assume always good
     
 
@@ -335,6 +343,18 @@ def verify():
 
 @mod.route("/additem", methods=["POST"])
 def add_items():
+    
+
+  
+    # req = urllib.Request(url, data)
+    #   urllib(url, {
+    #     method: 'POST',
+    #     headers: {
+    #   'Content-Type': 'application/json'
+    # },
+    #     data: data
+    #   });
+
     user_cookie = session.get("userID")
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
@@ -360,9 +380,9 @@ def add_items():
                         return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
 
                     postid = hashlib.md5((str(time.time()) + user_cookie).encode('utf-8')).hexdigest()
-                    #add_item_thread(user_cookie, postid, data)
+                    add_item_thread(user_cookie, postid, data)
                     # send to node for now
-                    _thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
+                    #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
                     print (e)
