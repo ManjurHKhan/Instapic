@@ -85,6 +85,7 @@ def add_item_thread(user_cookie, postid, data):
 
     data = request.get_json(silent=True)
     data["postid"] = postid
+    data["user_cookie"] = user_cookie
     url = "http://130.245.168.64/additem"
     #r = requests.post(url,  data={'number': 12524, 'type': 'issue', 'action': 'show'}, headers=headers)
     r = requests.post(url,  json={'data': data}, headers=headers)
