@@ -319,7 +319,7 @@ def login():
     return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
 
 
-@app.route("/logout", methods=["POST"])
+@mod.route("/logout", methods=["POST"])
 def logout():
     #resp = make_response()
     session.pop('userID', None)
