@@ -71,76 +71,21 @@ def send_delete_node(postid):
     return f.getcode() == 200 # return true if deleted node
 
 
+# def send_add_item(postid, data):
+#     logger.debug('THREAD - STARTING TO delete post %s', postid)
+#     url = "http://130.245.171.38/additem/%s" % (postid)
+#     r = requests.post(url)
+#     return f.getcode() == 200 # return true if deleted node
+
 def add_item_thread(user_cookie, postid, data):
-    cur = None
-    conn = None
-    try:
-        content = None
-        child_type = None
-        parent = None
-        media = []
-        conn = psycopg2.connect(**params)
-        if "content" in data:
-            content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
-        if "childType" in data:
-            child_type = data['childType'].strip() if data['childType'].strip() != "" else None
-        if(child_type != None):
-            if(child_type != "retweet" and child_type != "reply"):
-                if (conn != None):
-                    conn.close()
-                return jsonify(status="error", error="Child type does not match required child type")
-        if(content == None):
-            if (conn != None):
-                conn.close()
-            return jsonify(status="error", error="Content is null")
-        
-        parent = None
-        if "parent" in data:
-            parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
-        
-        if parent == None and child_type != None:
-            if (conn != None):
-                conn.close() 
-            return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
-
-        cur = conn.cursor()
-
-        if parent != None:
-            query = "INSERT INTO posts(username, postid, content, child_type, parent_id) VALUES (%s, %s, %s, %s,%s);"
-            cur.execute(query, (user_cookie, postid, content, child_type, parent ))
-            #cur.execute(query, (user_cookie, postid, content, child_type == 'retweet', parent ))
-            if child_type == "retweet":
-                query2 ="UPDATE posts set retweet_cnt = retweet_cnt+1 where postid=%s;"
-                cur.execute(query2, ( parent,))
-        else:
-            #logger.debug('additem-content 1: %s',data['content'])
-            #logger.debug('additem-content 2: %s',content)
-            query = "INSERT INTO posts(username, postid, content) VALUES (%s, %s, %s);"
-            logger.debug('additem-content SQL 3: %s', query, (user_cookie, postid, content, ))
-            # logger.debug("query: %s", query % (user_cookie, postid, content, child_type == 'retweet'))
-            cur.execute(query, (user_cookie, postid, content, ))
-
-        if "media" in data:
-            media = data["media"]
-            # Making sure if media exists first
-            # Skipping to save time
-            for mediaid in media:
-                query = "INSERT INTO user_media (username, postid, mediaid) VALUES (%s, %s, %s);"
-                cur.execute(query, (user_cookie, postid, mediaid,))
-
-        cur.close()
-        conn.commit()
-        conn.close()
-        return
-
-    except Exception as e:
-        if (cur != None):
-            cur.close()
-        if (conn != None):
-            conn.commit()
-            conn.close()
-        logger.debug('add_item_thready: somthing went wrong: %s',e)
-        logger.debug(traceback.format_exc())
+    logger.debug('THREAD - STARTING TO delete post %s', postid)
+    data["postid"] = postid
+    print (data)
+    url = "http://130.245.171.38/additem"
+    #r = requests.post(url, data = data)
+    req = urllib.Request(url, data)
+    return True # return true -- assume always good
+    
 
 #mail = smtplib.SMTP('localhost')
 @mod.route("/")
@@ -390,19 +335,38 @@ def verify():
 
 @mod.route("/additem", methods=["POST"])
 def add_items():
-    
     user_cookie = session.get("userID")
-    # logger.debug("current user: %s", user_cookie)
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
             if(data != None):
                 try:
-                    postid = hashlib.md5(str(time.time()).encode('utf-8')).hexdigest()
-                    add_item_thread(user_cookie, postid, data)
-                    #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
+                    child_type = None
+                    if "content" in data:
+                        content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
+                    if "childType" in data:
+                        child_type = data['childType'].strip() if data['childType'].strip() != "" else None
+                    if(child_type != None):
+                        if(child_type != "retweet" and child_type != "reply"):
+                            return jsonify(status="error", error="Child type does not match required child type")
+                    if(content == None):
+                        return jsonify(status="error", error="Content is null")
+                    
+                    parent = None
+                    if "parent" in data:
+                        parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
+                    
+                    if parent == None and child_type != None:
+                        return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
+
+                    postid = hashlib.md5((str(time.time()) + user_cookie).encode('utf-8')).hexdigest()
+                    #add_item_thread(user_cookie, postid, data)
+                    # send to node for now
+                    _thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
+                    print (e)
+                    print (traceback.format_exc())
                     return jsonify(status="error", error="Connection broke")
         
         return jsonify(status="error", error="Data was not valid")
