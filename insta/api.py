@@ -363,6 +363,7 @@ def add_items():
             if(data != None):
                 try:
                     child_type = None
+                    content = None
                     if "content" in data:
                         content = data['content'].rstrip() if data['content'].rstrip() != "" else None # we do not need to remove starting spaces
                     if "childType" in data:
