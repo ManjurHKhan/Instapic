@@ -86,7 +86,7 @@ def add_item_thread(user_cookie, postid, data):
    
     data["postid"] = postid
     data["user_cookie"] = user_cookie
-    url = "http://130.245.171.38/additem"
+    url = "http://127.0.0.1:8000/additem"
     #r = requests.post(url,  data={'number': 12524, 'type': 'issue', 'action': 'show'}, headers=headers)
     r = requests.post(url,  json={'data': data}, headers=headers)
     # data["postid"] = postid
