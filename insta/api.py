@@ -13,6 +13,9 @@ import time
 import smtplib
 import requests
 
+from elasticsearch import Elasticsearch
+
+
 import _thread
 from threading import Thread
 import urllib.request as urllib
@@ -21,6 +24,9 @@ from urllib.parse import urlencode
 import traceback
 
 urltoFiles = ""
+
+es = Elasticsearch([{'host': '130.245.171.41', 'port': 9200}])
+INDEX_NAME = "insta_index"
 
 # TODO we have to do something about the conn. We should really call it only inside try.
 ######################
@@ -61,6 +67,20 @@ SHA256_SALT_SIZE=5
 VAL_KEY_SIZE=10
 
 params = config()
+
+### Setting up Elastic search configs here - resetting a of elastic search
+request_body = {
+    "settings" : {
+        "number_of_shards": 1,
+        "number_of_replicas": 0
+    }
+}
+if es.indices.exists(INDEX_NAME):
+        print("deleting '%s' index..." % (INDEX_NAME))
+        res = es.indices.delete(index = INDEX_NAME)
+es.indices.create(index = INDEX_NAME, body = request_body)
+
+
 
 # this is threaded email - sends email through node email server
 def send_email(email, val_key):
@@ -105,8 +125,47 @@ def add_item_thread(user_cookie, postid, data):
 @app.route("/")
 def hello():
     return "<h1 style='color:green'>Hello Main World!</h1>"
-@app.route("/test")
-def hellod():
+
+@app.route("/test", methods=["POST"])
+def hello1():
+    node = request.get_json(silent=True)
+    print("ADDING", node)
+
+    x = es.index(index=INDEX_NAME,doc_type='external',body=node)
+    print (x)
+    return "<h1 style='color:green'>Hello Main World!</h1>"
+
+@app.route("/test2")
+def hello2():
+    rez = es.search(index=INDEX_NAME,doc_type='external',terminate_after=20, body={
+                                                                # "query": { 
+                                                                #     "term" : 
+                                                                #         { "num" : 21 }
+                                                                #     }
+                                                                # }
+                                                                 "query": {
+
+                    "bool": {
+                        "must": [
+                                  {  "regexp": { "content": ".*so.*" }},
+                                  { "match": { "key": "4950D6B339" }} ] 
+                        
+                    }
+    }
+       }
+                                                            )
+    print(rez)
+    hits = rez["hits"]
+    return "<h1 style='color:green'>Hello Main World!</h1>"
+
+
+@app.route("/clear")
+def hello_clear():
+    if es.indices.exists(INDEX_NAME):
+        print("deleting '%s' index..." % (INDEX_NAME))
+        res = es.indices.delete(index = INDEX_NAME)
+    es.indices.create(index = INDEX_NAME, body = request_body)
+    es.index(index=INDEX_NAME,doc_type='external',id=_id,body=node)
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 @app.route("/adduser", methods=["POST"])
@@ -354,7 +413,6 @@ def verify():
 def add_items():
     
 
-  
     # req = urllib.Request(url, data)
     #   urllib(url, {
     #     method: 'POST',
@@ -390,6 +448,11 @@ def add_items():
                         return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
 
                     postid = hashlib.md5((str(time.time()) + user_cookie).encode('utf-8')).hexdigest()
+
+                    #insert to elastic search
+                    data["postid"] = postid
+                    es.index(index=INDEX_NAME,doc_type='search',id=_id,body=data)
+
                     add_item_thread(user_cookie, postid, data)
                     # send to node for now
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
@@ -470,7 +533,19 @@ def search():
             data = request.get_json(silent=True)
             logger.debug('search data:%s', data)
 
+            dic = {
+
+            "interest": {  "time" : {"order" : "asc"}},
+            "rank": {  "sume(likes+ retweets) " : {"order" : "asc"}},
+            "parent" : {"match"},
+            "hasMedia" : {"true"},
+
+            }
+
+
+
             if (data != None):
+
                 limit = 25
                 if "limit" in data:
                     limit = int(data["limit"]) if data["limit"] != None else 25
@@ -484,6 +559,10 @@ def search():
                 q_string = None
                 following = True
                 q_data = (timestamp,)
+
+                
+
+
                 #select * from posts FULL OUTER JOIN user_media on posts.postid = user_media.postid;
                 #posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid
                 #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
@@ -563,19 +642,32 @@ def search():
                     miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
                     q_data += (user_cookie,)
                
+                 rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body={
+                    "query": {
+                        "bool": {
+                            "must": [
+                            {  "regexp": { "content": ".*"+q_string+".*" }}
+                            #,
+                            # { "range": { "timestamp":  {
+                            #             "gte" : timestamp,
+                            #             }
+                            #             } 
+                            #             }
+                            ] 
+
+                            # }
+                        }
+                    }
+                hits = [ "'" + x["_id"] + "'" for x in rez["hits"]]
+                str_hits = ", ".join(hits) 
+                where_query = " WHERE posts.postid in " str_hits
                 order_query = "ORDER BY " + rank_order  + ", posts.postid"
 
                 miniquery += order_query
 
                 miniquery += " LIMIT %s"
                 q_data += (limit,)
-
-                # print (query)
-                # print ()
-                
-                # print (miniquery)
-                # print ()
-                query = query % miniquery + joinquery + order_query
+                query = query % miniquery + joinquery + where_query+ order_query
                 logger.debug('search data:\n%s', query)
                 logger.debug('search data: %s', query)
 
