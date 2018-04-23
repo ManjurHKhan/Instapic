@@ -1,6 +1,7 @@
 from insta import app
 
 app.secret_key = 'prsW3dojaskl12=121341x3'
+app.SESSION_COOKIE_HTTPONLY = False
 
 if __name__ == "__main__":
     app.run()
