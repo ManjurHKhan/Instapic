@@ -137,23 +137,45 @@ def hello1():
 
 @app.route("/test2")
 def hello2():
-    rez = es.search(index=INDEX_NAME,doc_type='external',terminate_after=20, body={
-                                                                # "query": { 
-                                                                #     "term" : 
-                                                                #         { "num" : 21 }
-                                                                #     }
-                                                                # }
-                                                                 "query": {
+    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=20, body={
+                                                                "query": { 
+                                                                    "match_all" : 
+                                                                        {  }
+                                                                    }
+    #                                                             }
+    #                                                              "query": {
 
-                    "bool": {
-                        "must": [
-                                  {  "regexp": { "content": ".*so.*" }},
-                                  { "match": { "key": "4950D6B339" }} ] 
+    #                 "bool": {
+    #                     "must": [
+    #                               {  "regexp": { "content": ".*so.*" }},
+    #                               { "match": { "key": "4950D6B339" }} ] 
                         
-                    }
-    }
-       }
-                                                            )
+    #                 }
+    # }
+       });
+    print(rez)
+    hits = rez["hits"]
+    return "<h1 style='color:green'>Hello Main World!</h1>"
+
+
+@app.route("/test_index")
+def hello_in():
+    rez = es.search(index=INDEX_NAME,doc_type='external',terminate_after=20, body={
+                                                                "query": { 
+                                                                    "match_all" : 
+                                                                        {  }
+                                                                    }
+    #                                                             }
+    #                                                              "query": {
+
+    #                 "bool": {
+    #                     "must": [
+    #                               {  "regexp": { "content": ".*so.*" }},
+    #                               { "match": { "key": "4950D6B339" }} ] 
+                        
+    #                 }
+    # }
+       });
     print(rez)
     hits = rez["hits"]
     return "<h1 style='color:green'>Hello Main World!</h1>"
