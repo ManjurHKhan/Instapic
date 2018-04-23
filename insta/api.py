@@ -86,17 +86,24 @@ def add_item_thread(user_cookie, postid, data):
             child_type = data['childType'].strip() if data['childType'].strip() != "" else None
         if(child_type != None):
             if(child_type != "retweet" and child_type != "reply"):
+                if (conn != None):
+                    conn.close()
                 return jsonify(status="error", error="Child type does not match required child type")
         if(content == None):
+            if (conn != None):
+                conn.close()
             return jsonify(status="error", error="Content is null")
         
-        cur = conn.cursor()
         parent = None
         if "parent" in data:
             parent = data["parent"].rstrip() if data["parent"].rstrip() != "" else None
         
-        if parent == None and child_type != None: 
+        if parent == None and child_type != None:
+            if (conn != None):
+                conn.close() 
             return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
+
+        cur = conn.cursor()
 
         if parent != None:
             query = "INSERT INTO posts(username, postid, content, child_type, parent_id) VALUES (%s, %s, %s, %s,%s);"
@@ -285,6 +292,11 @@ def login():
                             resp = jsonify(status="OK")
                             session["userID"] = cookie_key
                             session["validated"] = True
+                            if cur != None:
+                                cur.close()
+                            if conn != None:
+                                conn.close()
+
                             return resp
                     else:
                         cur.close()
@@ -295,11 +307,13 @@ def login():
                     logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
-                    conn.commit()
-                    conn.close()
+                    if conn != None:
+                        conn.commit()
+                        conn.close()
                     return jsonify(status="error", error="Connection broke while trying to login ")
     if (cur != None):
         cur.close()
+<<<<<<< Updated upstream
     conn.close()
     logger.debug('login: bad json data given')
     return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
@@ -308,6 +322,15 @@ def login():
     return "<h1 style='color:blue'>Hello Blah World!</h1>"
 
 @mod.route("/logout", methods=["POST"])
+=======
+    if conn != None:
+        conn.close()
+    # logger.debug('login: bad json data given')
+    return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
+
+
+@app.route("/logout", methods=["POST"])
+>>>>>>> Stashed changes
 def logout():
     #resp = make_response()
     session.pop('userID', None)
@@ -337,6 +360,11 @@ def verify():
                 cur.execute(query, (email,))
                 rez = cur.fetchone()
                 if (rez == None):
+                    if cur != None:
+                        cur.close()
+                    if conn != None:
+                        conn.close()
+
                     return jsonify(status="error", error="Invalid Verify inputs.")
                 else:
                     username = rez[0]
@@ -346,6 +374,10 @@ def verify():
                     cur.execute(query, (username,key,))
                     rez = cur.fetchone()
                     if (rez == None):
+                        if cur != None:
+                            cur.close()
+                        if conn != None:
+                            conn.close()
                         return jsonify(status="error", error="Invalid Verify inputs.")
 
                     query = "UPDATE users set validated=True where username=%s and validated is False;"
@@ -382,16 +414,22 @@ def add_items():
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
+<<<<<<< Updated upstream
                     logger.debug('additem: something went wrong %s',e)
                     logger.debug(traceback.format_exc())
                     if (cur != None):
                         cur.close()
                     conn.commit()
                     conn.close()
+=======
+                    # logger.debug('additem: something went wrong %s',e)
+                    # logger.debug(traceback.format_exc())
+                   
+>>>>>>> Stashed changes
                     return jsonify(status="error", error="Connection broke")
-        conn.close()
+        
         return jsonify(status="error", error="Data was not valid")
-    conn.close()
+
     return jsonify(status="error", error="Not logged in")
 
 
@@ -410,8 +448,10 @@ def get_item(id):
             items = cur.fetchall()
             media = []
             if len(items) == 0:
-                cur.close()
-                conn.close()
+                if cur != None:
+                    cur.close()
+                if conn != None:
+                    conn.close()
                 return jsonify(status="error", error = "Item not Found")
            
             for it in items: 
@@ -439,12 +479,18 @@ def get_item(id):
             conn.close()
             return jsonify(status="OK", item = item)
         except Exception as e:
+<<<<<<< Updated upstream
             logger.debug('login: error  %s', e)
             logger.debug(traceback.format_exc())
             if (cur != None):
+=======
+            # logger.debug('login: error  %s', e)
+            # logger.debug(traceback.format_exc())
+            if cur != None:
+>>>>>>> Stashed changes
                 cur.close()
-            conn.commit()
-            conn.close()
+            if conn != None:
+                conn.close()
             return jsonify(status="error", error="Connection error while searching for item")
     conn.commit()
     conn.close()
@@ -519,6 +565,10 @@ def search():
                         rank_order = "sum DESC"
                         #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
                     else:
+                        if cur != None:
+                            cur.close()
+                        if conn != None:
+                            conn.close()
                         return jsonify(status="error", error="invalid Rank type passed in")
                 else:
                     rank_order = "sum DESC"
@@ -630,18 +680,31 @@ def search():
                                 pass
                             if i[8] != None:
                                 media.append(i[8])
-                    cur.close()
-                    conn.commit()
-                    conn.close()
+
+                    if cur != None:
+                        cur.close()
+                    if conn != None:
+                        conn.close()
                     return jsonify(status="OK", items=ret_items)
                 except Exception as e:
+<<<<<<< Updated upstream
                     logger.debug('search: error  %s', e)
                     logger.debug(traceback.format_exc())
                     if (cur != None):
+=======
+                    # logger.debug('search: error  %s', e)
+                    # logger.debug(traceback.format_exc())
+                    if cur != None:
+>>>>>>> Stashed changes
                         cur.close()
-                    conn.commit()
-                    conn.close()
+                    if conn != None:
+                        conn.close()
                     return jsonify(status="error", error="Connection error while searching for items")
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
         return jsonify(status="error", error="Data not valid")
     conn.close()
     return jsonify(status="error", error="User not logged in")
@@ -680,8 +743,18 @@ def del_item(id):
             conn.close()
             return jsonify(status="error", error="User not logged in")
     except Exception as e:
+<<<<<<< Updated upstream
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error", error="item not deleted....")
     return jsonify(status="OK")
 
@@ -717,10 +790,24 @@ def user_info(username):
             conn.commit()
             conn.close()
             return jsonify(status="OK", user = ret_user)
-
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
     except Exception as e:
+<<<<<<< Updated upstream
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error", error="user not found")
     return jsonify(status="error", error="user not found")
 
@@ -750,11 +837,26 @@ def user_followers(username):
             cur.execute(query, (username, limit, ))
             rez = cur.fetchall()
             followers = [y for row in rez for y in row]
+            if cur != None:
+                cur.close()
+            if conn != None:
+                conn.commit()
+                conn.close()
             return jsonify(status="OK",users=followers)
 
     except Exception as e:
+<<<<<<< Updated upstream
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error",error="Some DB connection failed probably")
 
 @mod.route("/user/<username>/following", methods=["GET"])
@@ -784,11 +886,31 @@ def users_user_is_following(username):
             cur.execute(query, (username, limit,))
             rez = cur.fetchall()
             followings = [y for row in rez for y in row]
+            if cur != None:
+                cur.close()
+            if conn != None:
+                conn.commit()
+                conn.close()
             return jsonify(status="OK",users=followings)
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
 
     except Exception as e:
+<<<<<<< Updated upstream
         logger.debug('users_user_is_following: error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.debug('users_user_is_following: error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error",error="Some DB connection failed probably")
 
 @mod.route("/follow", methods=["POST"])
@@ -849,11 +971,26 @@ def user_follow():
                     conn.commit()
                     conn.close()
                     return jsonify(status="OK",msg="updated followers")
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
         return jsonify(status="error",error="Invalid request - send json please.")
         
     except Exception as e:
+<<<<<<< Updated upstream
         logger.error('follow: Error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.error('follow: Error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 @mod.route("/item/<id>/like", methods=["POST"])
@@ -909,11 +1046,26 @@ def post_like(id):
                 conn.close()
                 msg = "Liked a post for %s"%user_cookie if like else "Unliked a post for %s"%user_cookie
                 return jsonify(status="OK",msg=msg)
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
         return jsonify(status="error",error="Invalid request - send json please.")
         
     except Exception as e:
+<<<<<<< Updated upstream
         logger.error('follow: Error  %s', e)
         logger.debug(traceback.format_exc())
+=======
+        # logger.error('follow: Error  %s', e)
+        # logger.debug(traceback.format_exc())
+        if cur != None:
+            cur.close()
+        if conn != None:
+            conn.commit()
+            conn.close()
+>>>>>>> Stashed changes
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 
