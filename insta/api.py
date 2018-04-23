@@ -83,7 +83,7 @@ def add_item_thread(user_cookie, postid, data):
 
     headers = {'Content-type': 'application/json'}
 
-    data = request.get_json(silent=True)
+   
     data["postid"] = postid
     data["user_cookie"] = user_cookie
     url = "http://130.245.168.64/additem"
@@ -381,9 +381,9 @@ def add_items():
                         return jsonify(status="error", msg="You cant be a child if you dont have a parent.")
 
                     postid = hashlib.md5((str(time.time()) + user_cookie).encode('utf-8')).hexdigest()
-                    add_item_thread(user_cookie, postid, data)
+                    #add_item_thread(user_cookie, postid, data)
                     # send to node for now
-                    #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
+                    _thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
                     print (e)
