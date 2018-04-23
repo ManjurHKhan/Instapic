@@ -613,8 +613,10 @@ def search():
                             ] 
 
                             # }
+                           }
                         }
-                    }
+                        }
+                        )
                     hits = [ "'" + x["_id"] + "'" for x in rez["hits"]]
                     str_hits = ", ".join(hits) 
                     where_query = " WHERE posts.postid in " + str_hits
