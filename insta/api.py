@@ -1,7 +1,7 @@
 from flask import Flask
 from flask import render_template,request, redirect, jsonify, make_response, session
 from http import cookies
-from dbconfig import config, email_config
+from insta.dbconfig import config, email_config
 import psycopg2
 import logging
 import os
@@ -56,6 +56,7 @@ logger.addHandler(fh)
 # logger.critical('critical message')
 ######################
 
+mod = Blueprint("site", __name__)
 
 app = Flask(__name__)
 
@@ -122,11 +123,11 @@ def add_item_thread(user_cookie, postid, data):
     
 
 #mail = smtplib.SMTP('localhost')
-@app.route("/")
+@mod.route("/")
 def hello():
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
-@app.route("/test", methods=["POST"])
+@mod.route("/test", methods=["POST"])
 def hello1():
     node = request.get_json(silent=True)
     print("ADDING", node)
@@ -135,7 +136,7 @@ def hello1():
     print (x)
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
-@app.route("/test2")
+@mod.route("/test2")
 def hello2():
     rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=20, body={
                                                                 "query": { 
@@ -158,7 +159,7 @@ def hello2():
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 
-@app.route("/test_index")
+@mod.route("/test_index")
 def hello_in():
     rez = es.search(index=INDEX_NAME,doc_type='external',terminate_after=20, body={
                                                                 "query": { 
@@ -181,7 +182,7 @@ def hello_in():
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
 
-@app.route("/clear")
+@mod.route("/clear")
 def hello_clear():
     if es.indices.exists(INDEX_NAME):
         print("deleting '%s' index..." % (INDEX_NAME))
@@ -190,7 +191,7 @@ def hello_clear():
     es.index(index=INDEX_NAME,doc_type='external',id=_id,body=node)
     return "<h1 style='color:green'>Hello Main World!</h1>"
 
-@app.route("/adduser", methods=["POST"])
+@mod.route("/adduser", methods=["POST"])
 def adduser():
     if (request.headers.get('Content-Type') == 'application/json'):
         data = request.get_json(silent=True)
@@ -282,7 +283,7 @@ def adduser():
     logger.debug('adduser: bad json data given')
     return jsonify(status="error", error="No json data was posted")
 
-@app.route("/login", methods=["POST"])
+@mod.route("/login", methods=["POST"])
 def login():
     conn = psycopg2.connect(**params)
     curr = None
@@ -362,7 +363,7 @@ def login():
     return jsonify(status="error", error="Insufficient json data was posted - provide a username or password")
 
 
-@app.route("/logout", methods=["POST"])
+@mod.route("/logout", methods=["POST"])
 def logout():
     #resp = make_response()
     session.pop('userID', None)
@@ -371,7 +372,7 @@ def logout():
     logger.debug('logged out')
     return jsonify(status="OK")
 
-@app.route("/verify", methods=["POST"])
+@mod.route("/verify", methods=["POST"])
 def verify():
     logger.debug("start_verify")
 
@@ -431,7 +432,7 @@ def verify():
                 return jsonify(status="error", error="Connection broke in verifying")
     return jsonify(status="error", error="No data posted. :( ")
 
-@app.route("/additem", methods=["POST"])
+@mod.route("/additem", methods=["POST"])
 def add_items():
     
 
@@ -489,7 +490,7 @@ def add_items():
     return jsonify(status="error", error="Not logged in")
 
 
-@app.route("/item/<id>", methods=["GET"])
+@mod.route("/item/<id>", methods=["GET"])
 def get_item(id):
     conn = psycopg2.connect(**params)
     curr = None
@@ -544,7 +545,7 @@ def get_item(id):
     conn.close()
     return jsonify(status="error", error="User not logged in")
 
-@app.route("/search", methods=["POST"])
+@mod.route("/search", methods=["POST"])
 def search():
     conn = None
     curr = None
@@ -783,7 +784,7 @@ def search():
     conn.close()
     return jsonify(status="error", error="User not logged in")
 
-@app.route("/item/<id>", methods=["DELETE"])
+@mod.route("/item/<id>", methods=["DELETE"])
 def del_item(id):
     try:
         conn = psycopg2.connect(**params)
@@ -826,7 +827,7 @@ def del_item(id):
     return jsonify(status="OK")
 
 
-@app.route("/user/<username>", methods=["GET"])
+@mod.route("/user/<username>", methods=["GET"])
 def user_info(username):
     try:
         conn = psycopg2.connect(**params)
@@ -871,7 +872,7 @@ def user_info(username):
         return jsonify(status="error", error="user not found")
     return jsonify(status="error", error="user not found")
 
-@app.route("/user/<username>/followers", methods=["GET"])
+@mod.route("/user/<username>/followers", methods=["GET"])
 def user_followers(username):
     try:
         conn = psycopg2.connect(**params)
@@ -912,7 +913,7 @@ def user_followers(username):
             conn.close()
         return jsonify(status="error",error="Some DB connection failed probably")
 
-@app.route("/user/<username>/following", methods=["GET"])
+@mod.route("/user/<username>/following", methods=["GET"])
 def users_user_is_following(username):
     try:
         conn = psycopg2.connect(**params)
@@ -959,7 +960,7 @@ def users_user_is_following(username):
             conn.close()
         return jsonify(status="error",error="Some DB connection failed probably")
 
-@app.route("/follow", methods=["POST"])
+@mod.route("/follow", methods=["POST"])
 def user_follow():
     logger.debug('top follow: starting endpoint eval ')
     try:
@@ -1032,7 +1033,7 @@ def user_follow():
             conn.close()
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
-@app.route("/item/<id>/like", methods=["POST"])
+@mod.route("/item/<id>/like", methods=["POST"])
 def post_like(id):
     post_id = id
     logger.debug('top follow: starting endpoint eval ')
@@ -1102,7 +1103,7 @@ def post_like(id):
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 
-# @app.route("/media/<id>", methods=["GET"])
+# @mod.route("/media/<id>", methods=["GET"])
 # def get_media(id):
 #     domain_get_media = urltoFiles + "/%s"%(id)
 #     resp = requests.request(
@@ -1116,7 +1117,7 @@ def post_like(id):
 #     # forward request to the file storage machine
 #     pass
 
-# @app.route("/addmedia", methods=["POST"])
+# @mod.route("/addmedia", methods=["POST"])
 # def add_media():
 #     try:
 #         conn = psycopg2.connect(**params)
