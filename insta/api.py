@@ -270,6 +270,7 @@ def adduser():
                             if not send_email(email, val_key): raise Exception("Email was not sent properly")
                         except Exception as e:
                             logger.debug('adduser: somthing went wrong early: %s',e)
+                            logger.debug(traceback.format_exc())
 
                             return jsonify(status="error", error="Username or email has already been taken. Or email was not sent")
 
@@ -288,8 +289,6 @@ def adduser():
                         return jsonify(status="OK", error="Added user :D - unvalidated")
                     else:
                         logger.debug('adduser: FAILED insertion of new account: %s'%(username))
-                        logger.debug('adduser: error  %s',e)
-                        logger.debug(traceback.format_exc())
                         cur.close()
                         conn.commit()
                         conn.close()
