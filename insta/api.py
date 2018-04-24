@@ -80,10 +80,13 @@ request_body = {
         "number_of_replicas": 0
     }
 }
-# if es.indices.exists(INDEX_NAME):
-#         print("deleting '%s' index..." % (INDEX_NAME))
-#         res = es.indices.delete(index = INDEX_NAME)
-# es.indices.create(index = INDEX_NAME, body = request_body)
+if es.indices.exists(INDEX_NAME):
+    print("deleting '%s' index..." % (INDEX_NAME))
+    res = es.indices.delete(index = INDEX_NAME)
+    es.indices.create(index = INDEX_NAME, body = request_body)
+        
+else:
+    es.indices.create(index = INDEX_NAME, body = request_body)
 
 
 
@@ -123,6 +126,9 @@ def add_item_thread(user_cookie, postid, data):
     # url = "http://130.245.168.64/additem"
     # #r = requests.post(url, data = data)
     # req = urllib.Request(url, data)
+    logger.debug('DONE LD %s', postid)
+    console.log('DONE LD %s', postid)
+
     return True # return true -- assume always good
     
 def t_insert_ES(postid, data):
@@ -184,7 +190,7 @@ def hello2():
 
 @mod.route("/test_index")
 def hello_in():
-    rez = es.search(index=INDEX_NAME,doc_type='external',terminate_after=20, body={
+    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=20, body={
                                                                 "query": { 
                                                                     "match_all" : 
                                                                         {  }
@@ -202,7 +208,8 @@ def hello_in():
        });
     print(rez)
     hits = rez["hits"]
-    return "<h1 style='color:green'>Hello Main World!</h1>"
+    return jsonify(data=rez, hits=hits)
+    #return "<h1 style='color:green'>Hello Main World!</h1>"
 
 
 @mod.route("/clear")
@@ -499,8 +506,7 @@ def add_items():
 
                     #insert to elastic search
                     data["postid"] = postid
-                    _thread.start_new_thread(t_insert_ES,(postid,data,))
-                    add_item_thread(user_cookie, postid, data)
+                    _thread.start_new_thread(add_item_thread,(user_cookie, postid, data,))
                     # send to node for now
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
