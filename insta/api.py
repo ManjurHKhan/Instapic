@@ -155,22 +155,25 @@ def ADD_post_node():
 
 @mod.route("/test2")
 def hello2():
-    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=20, body={
-                                                                "query": { 
-                                                                    "match_all" : 
-                                                                        {  }
-                                                                    }
-    #                                                             }
-    #                                                              "query": {
+    esbody = {
+                        "query": {
+                            "bool": {
+                                "must": [
+                                {  "regexp": { "content": ".*"+"w"+"*" }}
+                                #,
+                                # { "range": { "timestamp":  {
+                                #             "gte" : timestamp,
+                                #             }
+                                #             } KWdeemglJxiHVrV
+                                #             }
+                                ] 
 
-    #                 "bool": {
-    #                     "must": [
-    #                               {  "regexp": { "content": ".*so.*" }},
-    #                               { "match": { "key": "4950D6B339" }} ] 
-                        
-    #                 }
-    # }
-       });
+                                # }
+                               }
+                            }
+                        }
+    print (esbody)
+    rez = es.search(index=INDEX_NAME,doc_type='posts', body=esbody);
     print(rez)
     hits = rez["hits"]
     logger.debug(rez)
@@ -639,8 +642,6 @@ def search():
                     if "following" in data:
                         following = data["following"]
                 
-                    logger.warn("woop")
-                    
                     where_query = ""
                     if "q" in data:
                         
@@ -654,12 +655,12 @@ def search():
                         "query": {
                             "bool": {
                                 "must": [
-                                {  "regexp": { "content": ".*"+data["q"]+".*" }}
+                                {  "regexp": { "content": ".*%s.*"%(data["q"]) }}
                                 #,
                                 # { "range": { "timestamp":  {
                                 #             "gte" : timestamp,
                                 #             }
-                                #             } 
+                                #             } KWdeemglJxiHVrV
                                 #             }
                                 ] 
 
@@ -667,6 +668,7 @@ def search():
                                }
                             }
                         }
+                        logger.warn(esbody)
                         logger.warn("starting elastic search searching for %s here"% limit)
                                 
                         rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
@@ -680,6 +682,8 @@ def search():
                             str_hits = "(%s)" %( ",".join(hit_ids) )
                             # where_query = " WHERE posts.postid in " + str_hits + " "
                             miniquery += " AND  posts.postid in " + str_hits + " "
+                        else:
+                            return jsonify(status="OK", items=[])
                     rank_order = ""
                     if "rank" in data:
                         rank = data["rank"].rstrip()
