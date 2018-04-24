@@ -660,13 +660,14 @@ def search():
                     rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
                     hits = rez["hits"]["hits"]
                     hit_ids = ["'"+x["_id"]+"'" for x in hits]
-                    # print (es_body, hit_ids)
+                    print (es_body, hit_ids)
                     # print(rez, "SOOOOOOO");
                     # print(hits);
 
                     if len(hit_ids)> 0:
                         str_hits = "(%s)" %( ",".join(hit_ids) )
-                        where_query = " WHERE posts.postid in " + str_hits + " "
+                        # where_query = " WHERE posts.postid in " + str_hits + " "
+                        miniquery += " AND  posts.postid in " + str_hits + " "
                 rank_order = ""
                 if "rank" in data:
                     rank = data["rank"].rstrip()
@@ -695,7 +696,7 @@ def search():
                 if "replies" in data:
                     if data["replies"].rstrip().capitalize()=="False":
                         
-                        miniquery += "AND child_type != %s "
+                        miniquery += "AND (child_type != %s  OR child_type is NULL) "
                         q_data += ("reply",)
                
 
