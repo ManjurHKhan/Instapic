@@ -159,7 +159,7 @@ def hello2():
                         "query": {
                             "bool": {
                                 "must": [
-                                {  "regexp": { "content": ".*"+"w"+"*" }}
+                                {  "match": { "content": "KWdeemglJxiHVrV" }}
                                 #,
                                 # { "range": { "timestamp":  {
                                 #             "gte" : timestamp,
@@ -655,7 +655,7 @@ def search():
                         "query": {
                             "bool": {
                                 "must": [
-                                {  "regexp": { "content": ".*%s.*"%(data["q"]) }}
+                                {  "regexp": { "content": ".*%s.*"%(data["q"].replace("\n","")) }}
                                 #,
                                 # { "range": { "timestamp":  {
                                 #             "gte" : timestamp,
