@@ -48,6 +48,10 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
+
+
+
+
 # Example loggers
 # logger.debug('debug message')
 # logger.info('info message')
@@ -568,6 +572,7 @@ def search():
     if (user_cookie != None):
         if (request.headers.get('Content-Type') == 'application/json'):
             data = request.get_json(silent=True)
+
             logger.debug('search data:%s', data)
 
             dic = {
@@ -608,6 +613,8 @@ def search():
                 joinquery = "%s user_media on posts.postid = user_media.postid "
                 secretjoin = "FULL OUTER JOIN"
                 miniquery = "SELECT username, postid, date, content, child_type, parent_id, retweet_cnt, numliked, COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum from posts "
+                logger.warn("checking has media")
+                
                 if "hasMedia" in data:
                     hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
                     if hasMedia:
@@ -619,6 +626,7 @@ def search():
                 else:
                     joinquery = joinquery %("FULL OUTER JOIN")
 
+                logger.warn("minquery")
                 
                 miniquery += "WHERE date <= %s "
 
@@ -629,6 +637,7 @@ def search():
                 
                 if "following" in data:
                     following = data["following"].rstrip().capitalize() == "True"
+                logger.warn("woop")
                 
                 where_query = ""
                 if "q" in data:
@@ -655,8 +664,9 @@ def search():
                             # }
                            }
                         }
-                        }
-                        
+                    }
+                    logger.warn("starting elastic search searching for %s here"% limit)
+                            
                     rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
                     hits = rez["hits"]["hits"]
                     hit_ids = ["'"+x["_id"]+"'" for x in hits]
@@ -720,6 +730,9 @@ def search():
 
                 miniquery += " LIMIT %s"
                 q_data += (limit,)
+                logger.warn( "hello")
+                logger.warn( q_data)
+
                 query = query % miniquery + joinquery + where_query+ order_query
                 logger.debug('search data:\n%s', query)
                 logger.debug('search data: %s', query)
