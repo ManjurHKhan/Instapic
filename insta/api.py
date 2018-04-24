@@ -125,6 +125,8 @@ def add_item_thread(user_cookie, postid, data):
     # req = urllib.Request(url, data)
     return True # return true -- assume always good
     
+def t_insert_ES(postid, data):
+    es.index(index=INDEX_NAME,doc_type='posts',id=postid,body=data)
 
 #mail = smtplib.SMTP('localhost')
 @mod.route("/")
@@ -497,8 +499,7 @@ def add_items():
 
                     #insert to elastic search
                     data["postid"] = postid
-                    es.index(index=INDEX_NAME,doc_type='posts',id=postid,body=data)
-
+                    _thread.start_new_thread(t_insert_ES,(postid,data,))
                     add_item_thread(user_cookie, postid, data)
                     # send to node for now
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
