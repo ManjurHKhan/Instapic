@@ -84,7 +84,7 @@ if es.indices.exists(INDEX_NAME):
     print("deleting '%s' index..." % (INDEX_NAME))
     res = es.indices.delete(index = INDEX_NAME)
     es.indices.create(index = INDEX_NAME, body = request_body)
-        
+
 else:
     es.indices.create(index = INDEX_NAME, body = request_body)
 
@@ -114,7 +114,7 @@ def send_delete_node(postid):
 def add_item_thread(user_cookie, postid, data):
     logger.debug('THREAD - STARTING TO add post %s', postid)
 
-    headers = {'Content-type': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
 
    
     data["postid"] = postid
