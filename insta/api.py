@@ -628,19 +628,22 @@ def search():
                     q_data += (username,)
                 
                 if "following" in data:
-                    following = data["following"]
+                    following = data["following"].rstrip().capitalize() == "True"
                 
                 where_query = ""
                 if "q" in data:
-                    q_string = "%%%s%%" % (data["q"])
-                    miniquery += "AND content LIKE %s "
+                    
+                    #q_string = "%%%s%%" % (data["q"])
+                    #miniquery += "AND content LIKE %s "
+                    
+
                     # q_data += (q_string,)
-                    q_data = (" ",)
-                    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body={
+                    # q_data = (" ",)
+                    es_body = {
                     "query": {
                         "bool": {
                             "must": [
-                            {  "regexp": { "content": ".*"+q_string+".*" }}
+                            {  "regexp": { "content": ".*"+data["q"]+".*" }}
                             #,
                             # { "range": { "timestamp":  {
                             #             "gte" : timestamp,
@@ -653,10 +656,17 @@ def search():
                            }
                         }
                         }
-                        )
-                    hits = [ "'" + x["_id"] + "'" for x in rez["hits"]]
-                    str_hits = ", ".join(hits) 
-                    where_query = " WHERE posts.postid in " + str_hits
+                        
+                    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
+                    hits = rez["hits"]["hits"]
+                    hit_ids = ["'"+x["_id"]+"'" for x in hits]
+                    # print (es_body, hit_ids)
+                    # print(rez, "SOOOOOOO");
+                    # print(hits);
+
+                    if len(hit_ids)> 0:
+                        str_hits = "(%s)" %( ",".join(hit_ids) )
+                        where_query = " WHERE posts.postid in " + str_hits + " "
                 rank_order = ""
                 if "rank" in data:
                     rank = data["rank"].rstrip()
@@ -699,7 +709,7 @@ def search():
                 #     q_data += (user_cookie,)
                     
                 if following:
-                    miniquery += "AND username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
+                    miniquery += "AND posts.username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
                     q_data += (user_cookie,)
                
                  
@@ -715,14 +725,18 @@ def search():
 
                 # print (query)
                 # print (q_data)
+                # logger.debug("search query with data %s", query % (q_data))
 
-                logger.debug("search query with data %s", query % (q_data))
                 logger.debug("search query %s", query)
+                # print (q_data)
+                # print (query %(q_data))
 
                 try:
                     conn = psycopg2.connect(**params)
                     logger.debug('search conn:%s', conn)
                     cur = conn.cursor()
+                    print (q_data)
+                    print (query)
                     logger.debug(query % q_data)
                     # logger.debug('search posts query:%s', query % (timestamp, limit))
                     cur.execute(query, q_data)
@@ -788,6 +802,9 @@ def search():
                         cur.close()
                     if conn != None:
                         conn.close()
+                    print (traceback.format_exc())
+                    logger.debug(e)
+                    logger.debug(traceback.format_exc())
                     return jsonify(status="error", error="Connection error while searching for items")
         if cur != None:
             cur.close()
