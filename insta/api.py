@@ -159,7 +159,7 @@ def hello2():
                         "query": {
                             "bool": {
                                 "must": [
-                                {  "match": { "content": "KWdeemglJxiHVrVc" }}
+                                {  "match": { "body" :{ "content": "KWdeemglJxiHVrVc" }}}
                                 #,
                                 # { "range": { "timestamp":  {
                                 #             "gte" : timestamp,
@@ -655,7 +655,7 @@ def search():
                         "query": {
                             "bool": {
                                 "must": [
-                                {  "match": { "content": "%s"%(data["q"].replace("\n","")) }}
+                                {  "match": { "body" : {"content": "%s"%(data["q"].replace("\n",""))} }}
                                 #,
                                 # { "range": { "timestamp":  {
                                 #             "gte" : timestamp,
