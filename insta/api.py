@@ -56,7 +56,7 @@ logger.addHandler(fh)
 # logger.critical('critical message')
 ######################
 
-mod = Blueprint(app, __name__)
+mod = Blueprint("app", __name__)
 
 app = Flask(__name__)
 
