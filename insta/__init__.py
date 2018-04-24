@@ -3,6 +3,8 @@ from flask import Flask
 
 app = Flask(__name__)
 
+app.secret_key = 'prsW3dojaskl12=121341x3'
+
 from insta.api import mod as api_routes
 from insta.site import mod as site_routes
 
