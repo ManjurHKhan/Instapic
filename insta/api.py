@@ -585,246 +585,247 @@ def search():
             }
 
 
+            try:
+                if (data != None):
 
-            if (data != None):
+                    limit = 25
+                    if "limit" in data:
+                        limit = int(data["limit"]) if data["limit"] != None else 25
+                        limit = limit if limit < 101 and limit > 0 else 25
+                    timestamp = time.time()
+                    if "timestamp" in data:
+                        timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
+                    timestamp = time.ctime(timestamp)
 
-                limit = 25
-                if "limit" in data:
-                    limit = int(data["limit"]) if data["limit"] != None else 25
-                    limit = limit if limit < 101 and limit > 0 else 25
-                timestamp = time.time()
-                if "timestamp" in data:
-                    timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
-                timestamp = time.ctime(timestamp)
+                    username = None
+                    q_string = None
+                    following = True
+                    q_data = (timestamp,)
 
-                username = None
-                q_string = None
-                following = True
-                q_data = (timestamp,)
-
-                
+                    
 
 
-                #select * from posts FULL OUTER JOIN user_media on posts.postid = user_media.postid;
-                #posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid
-                #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
-                query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM (%s) as posts "
-                
-                joinquery = "%s user_media on posts.postid = user_media.postid "
-                secretjoin = "FULL OUTER JOIN"
-                miniquery = "SELECT username, postid, date, content, child_type, parent_id, retweet_cnt, numliked, COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum from posts "
-                logger.warn("checking has media")
-                
-                if "hasMedia" in data:
-                    hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
-                    if hasMedia:
-                        joinquery = joinquery %("INNER JOIN") 
-                        secretjoin = "INNER JOIN"
-                        miniquery = "SELECT DISTINCT(posts.*), COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum FROM posts %s user_media on posts.postid = user_media.postid "%secretjoin
+                    #select * from posts FULL OUTER JOIN user_media on posts.postid = user_media.postid;
+                    #posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid
+                    #query = "SELECT * FROM posts FULL OUTER JOIN user_media WHERE date <= %s ORDER BY posts.postid"
+                    query = "SELECT posts.username, posts.postid, date, content, child_type, parent_id, retweet_cnt, numliked, user_media.mediaid FROM (%s) as posts "
+                    
+                    joinquery = "%s user_media on posts.postid = user_media.postid "
+                    secretjoin = "FULL OUTER JOIN"
+                    miniquery = "SELECT username, postid, date, content, child_type, parent_id, retweet_cnt, numliked, COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum from posts "
+                    logger.warn("checking has media")
+                    
+                    if "hasMedia" in data:
+                        hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
+                        if hasMedia:
+                            joinquery = joinquery %("INNER JOIN") 
+                            secretjoin = "INNER JOIN"
+                            miniquery = "SELECT DISTINCT(posts.*), COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) as sum FROM posts %s user_media on posts.postid = user_media.postid "%secretjoin
+                        else:
+                            joinquery = joinquery %("FULL OUTER JOIN")
                     else:
                         joinquery = joinquery %("FULL OUTER JOIN")
-                else:
-                    joinquery = joinquery %("FULL OUTER JOIN")
 
-                logger.warn("minquery")
-                
-                miniquery += "WHERE date <= %s "
+                    logger.warn("minquery")
+                    
+                    miniquery += "WHERE date <= %s "
 
-                try:
+          
                     if "username" in data:
                         username = data["username"]
                         miniquery += "AND posts.username = %s "
                         q_data += (username,)
                     
                     if "following" in data:
-                        following = data["following"].rstrip().capitalize() == "True"
-                except Exception as e:
-                    logger.debug(e)
-                    logger.debug(traceback.format_exc())
-                    logger.warn("EERRRRRR");
-                logger.warn("woop")
+                        following = data["following"]
                 
-                where_query = ""
-                if "q" in data:
+                    logger.warn("woop")
                     
-                    #q_string = "%%%s%%" % (data["q"])
-                    #miniquery += "AND content LIKE %s "
-                    
+                    where_query = ""
+                    if "q" in data:
+                        
+                        #q_string = "%%%s%%" % (data["q"])
+                        #miniquery += "AND content LIKE %s "
+                        
 
-                    # q_data += (q_string,)
-                    # q_data = (" ",)
-                    es_body = {
-                    "query": {
-                        "bool": {
-                            "must": [
-                            {  "regexp": { "content": ".*"+data["q"]+".*" }}
-                            #,
-                            # { "range": { "timestamp":  {
-                            #             "gte" : timestamp,
-                            #             }
-                            #             } 
-                            #             }
-                            ] 
+                        # q_data += (q_string,)
+                        # q_data = (" ",)
+                        es_body = {
+                        "query": {
+                            "bool": {
+                                "must": [
+                                {  "regexp": { "content": ".*"+data["q"]+".*" }}
+                                #,
+                                # { "range": { "timestamp":  {
+                                #             "gte" : timestamp,
+                                #             }
+                                #             } 
+                                #             }
+                                ] 
 
-                            # }
-                           }
+                                # }
+                               }
+                            }
                         }
-                    }
-                    logger.warn("starting elastic search searching for %s here"% limit)
-                            
-                    rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
-                    hits = rez["hits"]["hits"]
-                    hit_ids = ["'"+x["_id"]+"'" for x in hits]
-                    print (es_body, hit_ids)
-                    # print(rez, "SOOOOOOO");
-                    # print(hits);
+                        logger.warn("starting elastic search searching for %s here"% limit)
+                                
+                        rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
+                        hits = rez["hits"]["hits"]
+                        hit_ids = ["'"+x["_id"]+"'" for x in hits]
+                        print (es_body, hit_ids)
+                        # print(rez, "SOOOOOOO");
+                        # print(hits);
 
-                    if len(hit_ids)> 0:
-                        str_hits = "(%s)" %( ",".join(hit_ids) )
-                        # where_query = " WHERE posts.postid in " + str_hits + " "
-                        miniquery += " AND  posts.postid in " + str_hits + " "
-                rank_order = ""
-                if "rank" in data:
-                    rank = data["rank"].rstrip()
-                    if rank == "time":
-                        rank_order = "posts.date DESC"
+                        if len(hit_ids)> 0:
+                            str_hits = "(%s)" %( ",".join(hit_ids) )
+                            # where_query = " WHERE posts.postid in " + str_hits + " "
+                            miniquery += " AND  posts.postid in " + str_hits + " "
+                    rank_order = ""
+                    if "rank" in data:
+                        rank = data["rank"].rstrip()
+                        if rank == "time":
+                            rank_order = "posts.date DESC"
 
-                    elif rank == "interest":
-                        rank_order = "sum DESC"
-                        #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+                        elif rank == "interest":
+                            rank_order = "sum DESC"
+                            #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+                        else:
+                            if cur != None:
+                                cur.close()
+                            if conn != None:
+                                conn.close()
+                            return jsonify(status="error", error="invalid Rank type passed in")
                     else:
+                        rank_order = "sum DESC"
+
+                        #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
+
+                    if "parent" in data:
+                        if data["parent"].rstrip() != None:
+                            parent = data["parent"]
+                            miniquery += "AND parent_id = %s "
+                            q_data += (parent,)
+                    if "replies" in data:
+                        if data["replies"].rstrip().capitalize()=="False":
+                            
+                            miniquery += "AND (child_type != %s  OR child_type is NULL) "
+                            q_data += ("reply",)
+                   
+
+                    # if "hasMedia" in data:
+                    #     if data["hasMedia"].rstrip().capitalize()=="True":
+                    #         q_string = "%%%s%%" % (data["q"])
+                    #         query += "AND content LIKE %s "
+                    #         q_data += (q_string,)
+                    # if username == None and not following:
+                    #     query += "AND username = %s "
+                    #     q_data += (user_cookie,)
+                        
+                    if following:
+                        miniquery += "AND posts.username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
+                        q_data += (user_cookie,)
+                   
+                     
+                    order_query = "ORDER BY " + rank_order  + ", posts.postid"
+
+                    miniquery += order_query
+
+                    miniquery += " LIMIT %s"
+                    q_data += (limit,)
+                    logger.warn( "hello")
+                    logger.warn( q_data)
+
+                    query = query % miniquery + joinquery + where_query+ order_query
+                    logger.debug('search data:\n%s', query)
+                    logger.debug('search data: %s', query)
+
+                    # print (query)
+                    # print (q_data)
+                    # logger.debug("search query with data %s", query % (q_data))
+
+                    logger.debug("search query %s", query)
+                    # print (q_data)
+                    # print (query %(q_data))
+
+                    try:
+                        conn = psycopg2.connect(**params)
+                        logger.debug('search conn:%s', conn)
+                        cur = conn.cursor()
+                        print (q_data)
+                        print (query)
+                        logger.debug(query % q_data)
+                        # logger.debug('search posts query:%s', query % (timestamp, limit))
+                        cur.execute(query, q_data)
+                        
+                        items = cur.fetchall()
+                        logger.debug("search item response %s" % (items))
+                        if len(items) == 0:
+                            logger.debug("NONE fetch for query %s" % (query))
+                            return jsonify(status="OK",  items=[])
+                        ret_items = []
+
+                        i = items[0]
+                        while len(items) > 0 and i[1] == None:
+                            items.pop(0)
+                            i = items[0]
+
+                        d = {'id':i[1],
+                            'username':i[0], 
+                            'property':{'likes':i[7]}, 
+                            'retweeted':i[6], 
+                            'content':i[3], 
+                            'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
+                            'childType':i[4], 
+                            'parent':i[5]
+                        }
+                        current = d['id']
+                        media = [] 
+                        items.append(None) # just a footer to indicate end of items reached 
+
+                        for i in items:
+                            if i == None or i[1] != current:
+                                d["media"] = media
+                                ret_items.append(d)
+                                if i != None:
+                                    # clear media and make new d
+                                    media = [] 
+                                    if i[8] != None:
+                                        media.append(i[8])
+                                    d = {'id':i[1],
+                                        'username':i[0], 
+                                        'property':{'likes':i[7]}, 
+                                        'retweeted':i[6], 
+                                        'content':i[3], 
+                                        'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
+                                        'childType':i[4], 
+                                        'parent':i[5]
+                                    }
+                                    current = i[1]
+
+                            else:
+                                if i[1] == None:
+                                    pass
+                                if i[8] != None:
+                                    media.append(i[8])
+
                         if cur != None:
                             cur.close()
                         if conn != None:
                             conn.close()
-                        return jsonify(status="error", error="invalid Rank type passed in")
-                else:
-                    rank_order = "sum DESC"
-
-                    #rank_order = "COALESCE(posts.retweet_cnt) + COALESCE(posts.numliked) DESC"
-
-                if "parent" in data:
-                    if data["parent"].rstrip() != None:
-                        parent = data["parent"]
-                        miniquery += "AND parent_id = %s "
-                        q_data += (parent,)
-                if "replies" in data:
-                    if data["replies"].rstrip().capitalize()=="False":
-                        
-                        miniquery += "AND (child_type != %s  OR child_type is NULL) "
-                        q_data += ("reply",)
-               
-
-                # if "hasMedia" in data:
-                #     if data["hasMedia"].rstrip().capitalize()=="True":
-                #         q_string = "%%%s%%" % (data["q"])
-                #         query += "AND content LIKE %s "
-                #         q_data += (q_string,)
-                # if username == None and not following:
-                #     query += "AND username = %s "
-                #     q_data += (user_cookie,)
-                    
-                if following:
-                    miniquery += "AND posts.username IN (SELECT followers.follows FROM followers WHERE followers.username = %s)  "
-                    q_data += (user_cookie,)
-               
-                 
-                order_query = "ORDER BY " + rank_order  + ", posts.postid"
-
-                miniquery += order_query
-
-                miniquery += " LIMIT %s"
-                q_data += (limit,)
-                logger.warn( "hello")
-                logger.warn( q_data)
-
-                query = query % miniquery + joinquery + where_query+ order_query
-                logger.debug('search data:\n%s', query)
-                logger.debug('search data: %s', query)
-
-                # print (query)
-                # print (q_data)
-                # logger.debug("search query with data %s", query % (q_data))
-
-                logger.debug("search query %s", query)
-                # print (q_data)
-                # print (query %(q_data))
-
-                try:
-                    conn = psycopg2.connect(**params)
-                    logger.debug('search conn:%s', conn)
-                    cur = conn.cursor()
-                    print (q_data)
-                    print (query)
-                    logger.debug(query % q_data)
-                    # logger.debug('search posts query:%s', query % (timestamp, limit))
-                    cur.execute(query, q_data)
-                    
-                    items = cur.fetchall()
-                    logger.debug("search item response %s" % (items))
-                    if len(items) == 0:
-                        logger.debug("NONE fetch for query %s" % (query))
-                        return jsonify(status="OK",  items=[])
-                    ret_items = []
-
-                    i = items[0]
-                    while len(items) > 0 and i[1] == None:
-                        items.pop(0)
-                        i = items[0]
-
-                    d = {'id':i[1],
-                        'username':i[0], 
-                        'property':{'likes':i[7]}, 
-                        'retweeted':i[6], 
-                        'content':i[3], 
-                        'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
-                        'childType':i[4], 
-                        'parent':i[5]
-                    }
-                    current = d['id']
-                    media = [] 
-                    items.append(None) # just a footer to indicate end of items reached 
-
-                    for i in items:
-                        if i == None or i[1] != current:
-                            d["media"] = media
-                            ret_items.append(d)
-                            if i != None:
-                                # clear media and make new d
-                                media = [] 
-                                if i[8] != None:
-                                    media.append(i[8])
-                                d = {'id':i[1],
-                                    'username':i[0], 
-                                    'property':{'likes':i[7]}, 
-                                    'retweeted':i[6], 
-                                    'content':i[3], 
-                                    'timestamp': int(time.mktime(time.strptime(str(i[2]).split('.')[0], '%Y-%m-%d %H:%M:%S'))),
-                                    'childType':i[4], 
-                                    'parent':i[5]
-                                }
-                                current = i[1]
-
-                        else:
-                            if i[1] == None:
-                                pass
-                            if i[8] != None:
-                                media.append(i[8])
-
-                    if cur != None:
-                        cur.close()
-                    if conn != None:
-                        conn.close()
-                    return jsonify(status="OK", items=ret_items)
-                except Exception as e:
-                    if cur != None:
-                        cur.close()
-                    if conn != None:
-                        conn.close()
-                    print (traceback.format_exc())
-                    logger.debug(e)
-                    logger.debug(traceback.format_exc())
-                    return jsonify(status="error", error="Connection error while searching for items")
+                        return jsonify(status="OK", items=ret_items)
+                    except Exception as e:
+                        if cur != None:
+                            cur.close()
+                        if conn != None:
+                            conn.close()
+                        print (traceback.format_exc())
+                        logger.debug(e)
+                        logger.debug(traceback.format_exc())
+                        return jsonify(status="error", error="Connection error while searching for items")
+            except Exception as ee:
+                logger.debug(ee)
+                logger.debug(traceback.format_exc())
+                logger.warn("MEEEP")
         if cur != None:
             cur.close()
         if conn != None:
