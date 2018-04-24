@@ -109,7 +109,7 @@ def send_delete_node(postid):
 #     return f.getcode() == 200 # return true if deleted node
 
 def add_item_thread(user_cookie, postid, data):
-    logger.debug('THREAD - STARTING TO delete post %s', postid)
+    logger.debug('THREAD - STARTING TO add post %s', postid)
 
     headers = {'Content-type': 'application/json'}
 
