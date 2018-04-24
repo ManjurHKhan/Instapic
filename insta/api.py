@@ -76,10 +76,10 @@ request_body = {
         "number_of_replicas": 0
     }
 }
-if es.indices.exists(INDEX_NAME):
-        print("deleting '%s' index..." % (INDEX_NAME))
-        res = es.indices.delete(index = INDEX_NAME)
-es.indices.create(index = INDEX_NAME, body = request_body)
+# if es.indices.exists(INDEX_NAME):
+#         print("deleting '%s' index..." % (INDEX_NAME))
+#         res = es.indices.delete(index = INDEX_NAME)
+# es.indices.create(index = INDEX_NAME, body = request_body)
 
 
 
@@ -856,6 +856,7 @@ def del_item(id):
             conn.commit()
             conn.close()
         return jsonify(status="error", error="item not deleted....")
+        es.delete(index=INDEX_NAME, id=postid, ignore=[400, 404])
     return jsonify(status="OK")
 
 
