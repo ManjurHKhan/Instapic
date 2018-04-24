@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, Blueprint
 from flask import render_template,request, redirect, jsonify, make_response, session
 from http import cookies
 from insta.dbconfig import config, email_config
