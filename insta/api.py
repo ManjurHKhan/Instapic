@@ -1138,11 +1138,3 @@ def post_like(id):
 #         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
     
-
-
-
-
-if __name__ == "__main__":
-    app.run(port=3000)
-
-                   
