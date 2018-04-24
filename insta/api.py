@@ -497,7 +497,9 @@ def add_items():
 
                     #insert to elastic search
                     data["postid"] = postid
+                    es.indices.open(index=INDEX_NAME)
                     es.index(index=INDEX_NAME,doc_type='posts',id=postid,body=data)
+                    es.indices.close(index=INDEX_NAME)
 
                     add_item_thread(user_cookie, postid, data)
                     # send to node for now
@@ -672,8 +674,11 @@ def search():
                         }
                         logger.warn(es_body)
                         logger.warn("starting elastic search searching for %s here"% limit)
-                                
+                        es.indices.open(index=INDEX_NAME)
+                               
                         rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
+                        es.indices.close(index=INDEX_NAME)
+                        
                         hits = rez["hits"]["hits"]
                         hit_ids = ["'"+x["_id"]+"'" for x in hits]
                         print (es_body, hit_ids)
