@@ -134,7 +134,20 @@ def hello1():
 
     x = es.index(index=INDEX_NAME,doc_type='external',body=node)
     print (x)
-    return "<h1 style='color:green'>Hello Main World!</h1>"
+    logger.debug(x)
+    return jsonify(data=x)
+
+
+@mod.route("/addpostnode", methods=["POST"])
+def ADD_post_node():
+    node = request.get_json(silent=True)
+    print("ADDING", node)
+
+    x = es.index(index=INDEX_NAME,doc_type='posts',body=node)
+    print (x)
+    logger.debug(x)
+    return jsonify(data=x)
+
 
 @mod.route("/test2")
 def hello2():
@@ -156,7 +169,8 @@ def hello2():
        });
     print(rez)
     hits = rez["hits"]
-    return "<h1 style='color:green'>Hello Main World!</h1>"
+    logger.debug(rez)
+    return jsonify(data=rez, hits=hits)
 
 
 @mod.route("/test_index")
