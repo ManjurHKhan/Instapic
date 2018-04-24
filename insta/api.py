@@ -207,7 +207,11 @@ def hello_in():
 def hello_clear():
     if es.indices.exists(INDEX_NAME):
         print("deleting '%s' index..." % (INDEX_NAME))
+        es.indices.open(index=INDEX_NAME)
+
         res = es.indices.delete(index = INDEX_NAME)
+        es.indices.close(index=INDEX_NAME)
+
     es.indices.create(index = INDEX_NAME, body = request_body)
     es.index(index=INDEX_NAME,doc_type='external',id=_id,body=node)
     return "<h1 style='color:green'>Hello Main World!</h1>"
@@ -886,7 +890,11 @@ def del_item(id):
             conn.commit()
             conn.close()
         return jsonify(status="error", error="item not deleted....")
+        es.indices.open(index=INDEX_NAME)
+
         es.delete(index=INDEX_NAME, id=postid, ignore=[400, 404])
+        es.indices.close(index=INDEX_NAME)
+
     return jsonify(status="OK")
 
 
