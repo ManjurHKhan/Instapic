@@ -668,7 +668,7 @@ def search():
                                }
                             }
                         }
-                        logger.warn(esbody)
+                        logger.warn(es_body)
                         logger.warn("starting elastic search searching for %s here"% limit)
                                 
                         rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
