@@ -127,7 +127,7 @@ def add_item_thread(user_cookie, postid, data):
     # #r = requests.post(url, data = data)
     # req = urllib.Request(url, data)
     logger.debug('DONE LD %s', postid)
-    console.log('DONE LD %s', postid)
+    # console.log('DONE LD %s', postid)
 
     return True # return true -- assume always good
     
