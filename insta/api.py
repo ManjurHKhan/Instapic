@@ -630,13 +630,18 @@ def search():
                 
                 miniquery += "WHERE date <= %s "
 
-                if "username" in data:
-                    username = data["username"]
-                    miniquery += "AND posts.username = %s "
-                    q_data += (username,)
-                
-                if "following" in data:
-                    following = data["following"].rstrip().capitalize() == "True"
+                try:
+                    if "username" in data:
+                        username = data["username"]
+                        miniquery += "AND posts.username = %s "
+                        q_data += (username,)
+                    
+                    if "following" in data:
+                        following = data["following"].rstrip().capitalize() == "True"
+                except Exception as e:
+                    logger.debug(e)
+                    logger.debug(traceback.format_exc())
+                    logger.warn("EERRRRRR");
                 logger.warn("woop")
                 
                 where_query = ""
