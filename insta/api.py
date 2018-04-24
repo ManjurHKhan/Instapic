@@ -481,8 +481,8 @@ def add_items():
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
                 except Exception as e:
-                    print (e)
-                    print (traceback.format_exc())
+                    logger.debug(e)
+                    logger.debug(traceback.format_exc())
                     return jsonify(status="error", error="Connection broke")
         
         return jsonify(status="error", error="Data was not valid")
