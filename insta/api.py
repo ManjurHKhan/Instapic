@@ -474,7 +474,7 @@ def add_items():
 
                     #insert to elastic search
                     data["postid"] = postid
-                    es.index(index=INDEX_NAME,doc_type='search',id=_id,body=data)
+                    es.index(index=INDEX_NAME,doc_type='posts',id=postid,body=data)
 
                     add_item_thread(user_cookie, postid, data)
                     # send to node for now
