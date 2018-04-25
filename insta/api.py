@@ -608,10 +608,11 @@ def search():
                     timestamp = time.time()
                     if "timestamp" in data:
                         timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
-                    timestamp = time.ctime(timestamp)
-                    timestamp =timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    #timestamp = time.ctime(timestamp)
+                    # timestamp =timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    
+                    timestamp=time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(timestamp))
                     print (timestamp)
-
                     username = None
                     q_string = None
                     following = True
