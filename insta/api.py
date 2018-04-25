@@ -108,6 +108,7 @@ def send_delete_node(postid):
 def node_login(userid):
     print('Thread Login')
     url = "http://130.245.171.38/login"
+    url = "http://130.245.171.38/login/%s" % (userid)
     f = urllib.urlopen(url)
     return f.getcode() == 200 # return true if deleted no
 
