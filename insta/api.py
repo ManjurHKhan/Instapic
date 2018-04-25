@@ -105,18 +105,18 @@ def send_delete_node(postid):
     return f.getcode() == 200 # return true if deleted node
 
 
-def node_login(userid):
-    print('Thread Login')
-    url = "http://130.245.171.38/login"
-    url = "http://130.245.171.38/login/%s" % (userid)
-    f = urllib.urlopen(url)
-    return f.getcode() == 200 # return true if deleted no
+# def node_login(userid):
+#     print('Thread Login')
+#     url = "http://130.245.171.38/login"
+#     url = "http://130.245.171.38/login/%s" % (userid)
+#     f = urllib.urlopen(url)
+#     return f.getcode() == 200 # return true if deleted no
 
-def node_logout():
-    print('Thread Logout')
-    url = "http://130.245.171.38/logout"
-    f = urllib.urlopen(url)
-    return f.getcode() == 200 # return true if deleted no
+# def node_logout():
+#     print('Thread Logout')
+#     url = "http://130.245.171.38/logout"
+#     f = urllib.urlopen(url)
+#     return f.getcode() == 200 # return true if deleted no
 
 # def send_add_item(postid, data):
 #     logger.debug('THREAD - STARTING TO delete post %s', postid)
@@ -387,7 +387,7 @@ def login():
                             session["validated"] = True
 
                             # make node login too
-                            _thread.start_new_thread(node_login,(cookie_key,))
+                            # _thread.start_new_thread(node_login,(cookie_key,))
 
                             if cur != None:
                                 cur.close()
@@ -469,7 +469,7 @@ def verify():
                     query = "UPDATE users set validated=True where username=%s and validated is False;"
                     
                     cur.execute(query, (username,))
-                    _thread.start_new_thread(node_logout)
+                    # _thread.start_new_thread(node_logout)
 
                     # should we delete query
                     cur.close()
