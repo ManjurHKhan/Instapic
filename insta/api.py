@@ -112,8 +112,8 @@ def send_delete_node(postid):
 #     return f.getcode() == 200 # return true if deleted node
 
 def add_item_thread(user_cookie, postid, data):
-    logger.debug('THREAD - STARTING TO add post %s', postid)
-    
+    # logger.debug('THREAD - STARTING TO add post %s', postid)
+
     headers = {'Content-Type': 'application/json'}
 
    
@@ -126,7 +126,7 @@ def add_item_thread(user_cookie, postid, data):
     # url = "http://130.245.168.64/additem"
     # #r = requests.post(url, data = data)
     # req = urllib.Request(url, data)
-    logger.debug('DONE LD %s', postid)
+    #logger.debug('DONE LD %s', postid)
     # console.log('DONE LD %s', postid)
 
     return True # return true -- assume always good
@@ -679,8 +679,8 @@ def search():
                         }
                         logger.warn(es_body)
                         logger.warn("starting elastic search searching for %s here"% limit)
-                                
-                        rez = es.search(index=INDEX_NAME,doc_type='posts',terminate_after=limit, body=es_body)
+                        print ("starting elastic search searching for %s here"% limit)
+                        rez = es.search(index=INDEX_NAME,doc_type='posts', body=es_body)
                         hits = rez["hits"]["hits"]
                         hit_ids = ["'"+x["_id"]+"'" for x in hits]
                         print (es_body, hit_ids)
