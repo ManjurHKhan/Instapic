@@ -528,8 +528,7 @@ def add_items():
 
                     #insert to elastic search
                     data["postid"] = postid
-                    # _thread.start_new_thread(add_item_thread,(user_cookie, postid, data,))
-                    add_item_thread(user_cookie, postid, data);
+                    _thread.start_new_thread(add_item_thread,(user_cookie, postid, data,))
                     # send to node for now
                     #_thread.start_new_thread(add_item_thread, (user_cookie, postid, data,))
                     return jsonify(status="OK", id=postid)
