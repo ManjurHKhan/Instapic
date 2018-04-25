@@ -277,6 +277,7 @@ def adduser():
                             
                             logger.debug('starting validation email  %s'%(username))
                             if not send_email(email, val_key): raise Exception("Email was not sent properly")
+
                         except Exception as e:
                             logger.debug('adduser: somthing went wrong early: %s',e)
                             logger.debug(traceback.format_exc())
@@ -608,6 +609,8 @@ def search():
                     if "timestamp" in data:
                         timestamp = int(data["timestamp"]) if data["timestamp"] != None else time.time()
                     timestamp = time.ctime(timestamp)
+                    timestamp =timestamp.strftime('%Y-%m-%d %H:%M:%S')
+                    print (timestamp)
 
                     username = None
                     q_string = None
@@ -628,7 +631,10 @@ def search():
                     logger.warn("checking has media")
                     
                     if "hasMedia" in data:
-                        hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
+                        if data["hasMedia"] is bool:
+                            hasMedia = data[hasMedia]
+                        else:
+                            hasMedia = data["hasMedia"].rstrip().capitalize() == "True"
                         if hasMedia:
                             joinquery = joinquery %("INNER JOIN") 
                             secretjoin = "INNER JOIN"
@@ -642,14 +648,17 @@ def search():
                     
                     miniquery += "WHERE date <= %s "
 
-          
+                    print (data)
                     if "username" in data:
                         username = data["username"]
                         miniquery += "AND posts.username = %s "
                         q_data += (username,)
                     
                     if "following" in data:
-                        following = data["following"]
+                        if data["following"] is bool:
+                            following = data["following"]
+                        else:
+                            following = str(data["following"]) == "True"
                 
                     where_query = ""
                     if "q" in data:
@@ -681,6 +690,7 @@ def search():
                         logger.warn("starting elastic search searching for %s here"% limit)
                         print ("starting elastic search searching for %s here"% limit)
                         rez = es.search(index=INDEX_NAME,doc_type='posts', body=es_body)
+                        print (rez)
                         hits = rez["hits"]["hits"]
                         hit_ids = ["'"+x["_id"]+"'" for x in hits]
                         print (es_body, hit_ids)
