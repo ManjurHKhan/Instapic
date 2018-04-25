@@ -80,13 +80,13 @@ request_body = {
         "number_of_replicas": 0
     }
 }
-if es.indices.exists(INDEX_NAME):
-    print("deleting '%s' index..." % (INDEX_NAME))
-    res = es.indices.delete(index = INDEX_NAME)
-    es.indices.create(index = INDEX_NAME, body = request_body)
+# if es.indices.exists(INDEX_NAME):
+#     print("CLEARING '%s' index..." % (INDEX_NAME))
+#     res = es.indices.delete(index = INDEX_NAME)
+#     es.indices.create(index = INDEX_NAME, body = request_body)
 
-else:
-    es.indices.create(index = INDEX_NAME, body = request_body)
+# else:
+#     es.indices.create(index = INDEX_NAME, body = request_body)
 
 
 
@@ -724,7 +724,7 @@ def search():
                             # where_query = " WHERE posts.postid in " + str_hits + " "
                             miniquery += " AND  posts.postid in " + str_hits + " "
                         else:
-                            return jsonify(status="OK", items=[])
+                            return jsonify(status="OK", items=[], q = data["q"], params = data)
                     rank_order = ""
                     if "rank" in data:
                         rank = data["rank"].rstrip()
