@@ -724,7 +724,9 @@ def search():
                             # where_query = " WHERE posts.postid in " + str_hits + " "
                             miniquery += " AND  posts.postid in " + str_hits + " "
                         else:
-                            return jsonify(status="OK", items=[], q = data["q"], params = data)
+                            miniquery += " AND posts.content LIKE %s "
+                            q_data += ('%%' + data["q"] + '%%',)
+                            # return jsonify(status="OK", items=[], q = data["q"], params = data)
                     rank_order = ""
                     if "rank" in data:
                         rank = data["rank"].rstrip()
