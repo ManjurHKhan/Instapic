@@ -877,7 +877,7 @@ def search():
             conn.commit()
             conn.close()
         return jsonify(status="error", error="Data not valid")
-    conn.close()
+
     return jsonify(status="error", error="User not logged in")
 
 @mod.route("/item/<id>", methods=["DELETE"])
