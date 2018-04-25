@@ -105,6 +105,18 @@ def send_delete_node(postid):
     return f.getcode() == 200 # return true if deleted node
 
 
+def node_login(userid):
+    print('Thread Login')
+    url = "http://130.245.171.38/login"
+    f = urllib.urlopen(url)
+    return f.getcode() == 200 # return true if deleted no
+
+def node_logout():
+    print('Thread Logout')
+    url = "http://130.245.171.38/logout"
+    f = urllib.urlopen(url)
+    return f.getcode() == 200 # return true if deleted no
+
 # def send_add_item(postid, data):
 #     logger.debug('THREAD - STARTING TO delete post %s', postid)
 #     url = "http://130.245.171.38/additem/%s" % (postid)
@@ -130,6 +142,9 @@ def add_item_thread(user_cookie, postid, data):
     # console.log('DONE LD %s', postid)
 
     return True # return true -- assume always good
+
+
+
     
 def t_insert_ES(postid, data):
     es.index(index=INDEX_NAME,doc_type='posts',id=postid,body=data)
@@ -369,6 +384,10 @@ def login():
                             resp = jsonify(status="OK")
                             session["userID"] = cookie_key
                             session["validated"] = True
+
+                            # make node login too
+                            _thread.start_new_thread(node_login,(cookie_key,))
+
                             if cur != None:
                                 cur.close()
                             if conn != None:
@@ -449,6 +468,7 @@ def verify():
                     query = "UPDATE users set validated=True where username=%s and validated is False;"
                     
                     cur.execute(query, (username,))
+                    _thread.start_new_thread(node_logout)
 
                     # should we delete query
                     cur.close()
@@ -884,8 +904,6 @@ def del_item(id):
                    logger.debug(traceback.format_exc())
 
                 cur.execute(query2, (user_cookie, postid,))
-
-
             cur.close()
             conn.commit()
             conn.close()
@@ -1179,19 +1197,6 @@ def post_like(id):
         return jsonify(status="error",error="Some DB connection failed probably while trying to follow")
 
 
-# @mod.route("/media/<id>", methods=["GET"])
-# def get_media(id):
-#     domain_get_media = urltoFiles + "/%s"%(id)
-#     resp = requests.request(
-#         method=request.method,
-#         url=request.url.replace('old-domain.com', urltoFiles),
-#         headers={key: value for (key, value) in request.headers if key != 'Host'},
-#         data=request.get_data(),
-#         cookies=request.cookies,
-#         allow_redirects=False)
-
-#     # forward request to the file storage machine
-#     pass
 
 # @mod.route("/addmedia", methods=["POST"])
 # def add_media():
